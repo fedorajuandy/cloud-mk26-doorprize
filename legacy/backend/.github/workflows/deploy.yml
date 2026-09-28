@@ -1,0 +1,64 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+
+      - name: Deploy Application
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.BEMK26WT_HOST }}
+          username: ${{ secrets.BEMK26WT_USER }}
+          password: ${{ secrets.BEMK26WT_PASSWORD }}
+          port: 22
+          script: |
+            # Ensure npm and node are in the PATH (INI YANG UDAH GUE GANTI KE v24.20.0)
+            export PATH=$PATH:/home/cloudmandirikarnaval2026wishingtree/.nvm/versions/node/v24.20.0/bin
+
+            # Check if npm is available
+            which npm || { echo "npm not found"; exit 1; }
+
+            echo "Starting deployment process..."
+
+            # Navigate to the application's directory
+            cd /home/cloudmandirikarnaval2026wishingtree/htdocs/cloud.mkn2026.com
+
+            # Pull the latest changes from the GitHub repository
+            git pull origin main
+
+            # Update submodule
+            git submodule init
+            git submodule update --remote --merge
+
+            # Install dependencies
+            npm install
+
+            # update the database schema using Knex migrations
+            npx knex migrate:latest --env production
+
+            npx knex seed:run
+
+            # Reload or restart the application using PM2
+            pm2 reload ecosystem.config.js --env production
+
+            # Save the PM2 process list and startup script
+            pm2 save
+
+            # Set up PM2 to start on boot with systemd
+            pm2 startup systemd -u ${USER} --hp /home/${USER}
+
+            # Exit with a success message
+            echo "Deployment complete!"
+            exit 0

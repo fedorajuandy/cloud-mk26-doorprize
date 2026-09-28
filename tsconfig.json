@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "types": ["node", "@solidjs/start/env"],
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "scripts",
+    "database",
+    "tests",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ]
+}

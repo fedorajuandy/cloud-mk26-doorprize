@@ -1,0 +1,3 @@
+[submodule "utils/utility_javascript"]
+	path = utils/utility_javascript
+	url = https://github.com/Maximum-Ultimate/utility_javascript.git

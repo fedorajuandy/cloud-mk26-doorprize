@@ -1,0 +1,12 @@
+node_modules/
+.output/
+.solid/
+.vite/
+dist/
+.env
+.env.*
+!.env.example
+*.sqlite*
+.DS_Store
+playwright-report/
+test-results/

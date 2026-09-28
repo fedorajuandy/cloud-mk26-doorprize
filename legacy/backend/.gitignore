@@ -1,0 +1,8 @@
+node_modules
+build
+npm-debug.log
+notes
+filesave
+
+.env
+.DS_Store
