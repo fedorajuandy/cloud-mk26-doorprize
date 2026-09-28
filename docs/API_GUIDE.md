@@ -165,6 +165,31 @@ curl --fail-with-body -b "$COOKIE_JAR" -X PATCH \
 
 Creation and updates return the participant in `data`. Archiving returns `{"data":null}`. Unknown body fields are rejected. There is no permanent-delete API.
 
+## Batch participant updates
+
+`PATCH /api/participants/batch` requires `update_participants` permission and the same authenticated session as individual updates.
+
+Send an `updates` array containing 1–100 objects. Each object must have a unique participant `id` (positive integer or decimal string) and at least one field to change. The JSON request must fit within 64 KiB.
+
+```sh
+curl --fail-with-body -b "$COOKIE_JAR" -X PATCH \
+  "$BASE_URL/api/participants/batch" \
+  -H 'Content-Type: application/json' \
+  -d '{"updates":[{"id":101,"babak":2,"prize":"Laptop"},{"id":102,"babak":2,"prize":"Laptop"},{"id":103,"prize":null}]}'
+```
+
+```json
+{ "data": { "updated": 3, "ids": ["101", "102", "103"] } }
+```
+
+- Omitted fields remain unchanged. For example, supplying only `babak` preserves the existing prize and personal details.
+- Explicit `null` clears `prize`, `babak`, or `no_hp`; `babak: 0` sets round zero. Blank prize/phone strings also become null, matching individual updates.
+- Other editable participant fields (`full_name`, `nip`, `unit_kerja`, `no_hp`) are optional and use the same validation as individual updates. Required text fields cannot be cleared.
+- IDs and timestamps cannot be changed. `updated_at` is set automatically for each targeted record. Unknown fields, duplicate IDs, empty updates, and invalid values return `422`.
+- Every ID must identify an active participant. A missing or archived participant returns `404`.
+- The entire batch is atomic: any validation or database failure leaves all participants unchanged. No records are inserted. Success counts targeted records, including assignments that already had the requested value.
+- Use separate requests for more than 100 participants; atomicity applies to each request independently.
+
 ## Import participants from Excel or CSV
 
 `POST /api/participants/import`

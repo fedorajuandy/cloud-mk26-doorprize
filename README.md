@@ -104,6 +104,7 @@ Success: `{ "data": ... }`. Errors: `{ "error": { "message": "..." } }`.
 | GET                     | `/api/settings`                                                                    | Public login branding                                                                           |
 | PUT                     | `/api/settings`                                                                    | Update `{logo_url, login_bg_color}` (Super Admin)                                               |
 | GET, POST               | `/api/participants`                                                                | List or create                                                                                  |
+| PATCH                   | `/api/participants/batch`                                                          | Atomically update supplied fields for up to 100 participants                                    |
 | GET, PUT, PATCH, DELETE | `/api/participants/:id`                                                            | Read, update, or archive                                                                        |
 | PUT                     | `/api/participants/:id/restore`                                                    | Restore an archived participant                                                                 |
 | GET, POST               | `/api/users`, `/api/roles`, `/api/permissions`                                     | List or create (Super Admin)                                                                    |

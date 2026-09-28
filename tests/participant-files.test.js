@@ -354,3 +354,95 @@ test("Excel export writes formula-looking participant text as text, not formulas
   assert.equal(sheet.getCell("E2").formula, undefined);
   assert.equal(sheet.getCell("B2").value, "000123");
 });
+
+function batchUpdate(updates, auth = cookie) {
+  return request(
+    "/participants/batch",
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ updates }),
+    },
+    auth,
+  );
+}
+test("batch updates preserve omitted fields and support distinct assignments, null and zero", async () => {
+  await sample();
+  const before = await db("participants").whereNull("deleted_at").orderBy("id");
+  const response = await batchUpdate([
+    { id: before[0].id, prize: "Travel", babak: 3 },
+    { id: String(before[1].id), prize: null },
+    { id: before[2].id, babak: 0 },
+    { id: before[3].id, prize: "Travel", babak: 3 },
+  ]);
+  assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await response.json()).data.updated, 4);
+  const after = await db("participants").whereNull("deleted_at").orderBy("id");
+  for (let i = 0; i < before.length; i++) {
+    for (const field of [
+      "full_name",
+      "nip",
+      "no_hp",
+      "unit_kerja",
+      "created_at",
+      "deleted_at",
+    ])
+      assert.deepEqual(after[i][field], before[i][field]);
+  }
+  assert.equal(after[0].prize, "Travel");
+  assert.equal(after[0].babak, 3);
+  assert.equal(after[1].prize, null);
+  assert.equal(after[1].babak, before[1].babak);
+  assert.equal(after[2].babak, 0);
+  assert.equal(after[2].prize, before[2].prize);
+  assert.equal(after[3].prize, "Travel");
+  assert.equal(
+    (await batchUpdate([{ id: before[0].id, babak: null }])).status,
+    200,
+  );
+  assert.equal(
+    (await db("participants").where({ id: before[0].id }).first()).babak,
+    null,
+  );
+});
+test("batch updates reject invalid, missing, archived and unauthorized records atomically", async () => {
+  await sample();
+  const before = await db("participants").orderBy("id");
+  const id = before[0].id;
+  for (const updates of [
+    [],
+    [{ id }],
+    [
+      { id, prize: "Changed" },
+      { id: String(id), babak: 2 },
+    ],
+    [{ id, babak: -1 }],
+    [{ id, babak: "2" }],
+    [{ id, full_name: null }],
+    [{ id, deleted_at: null }],
+    [{ id: 0, prize: "Changed" }],
+    [
+      { id, prize: "Changed" },
+      { id: before[1].id, babak: -1 },
+    ],
+    Array.from({ length: 101 }, (_, i) => ({ id: i + 1, babak: 2 })),
+  ])
+    assert.equal((await batchUpdate(updates)).status, 422);
+  for (const missingId of [999999, before.at(-1).id])
+    assert.equal(
+      (
+        await batchUpdate([
+          { id, prize: "Changed" },
+          { id: missingId, babak: 2 },
+        ])
+      ).status,
+      404,
+    );
+  assert.equal(
+    (await batchUpdate([{ id, babak: 2 }], viewerCookie)).status,
+    403,
+  );
+  assert.equal((await batchUpdate([{ id, babak: 2 }], "")).status, 401);
+  assert.equal((await request("/participants/batch")).status, 405);
+  assert.deepEqual(await db("participants").orderBy("id"), before);
+});

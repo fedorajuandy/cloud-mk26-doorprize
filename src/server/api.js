@@ -50,6 +50,10 @@ export async function handleApi(request, db) {
     if (resource === "me" && !rawId && method === "GET") return json(user);
     const context = { db, user, resource, rawId, action, method, url, request };
     if (resource === "participants" && !action) {
+      if (rawId === "batch") {
+        const { updateParticipants } = await import("./participants/batch.js");
+        return await updateParticipants(context);
+      }
       if (rawId === "import") {
         const { importParticipants } = await import("./participants/import.js");
         return await importParticipants(context);
