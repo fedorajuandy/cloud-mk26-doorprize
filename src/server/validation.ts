@@ -14,7 +14,7 @@ export const participant = z
   .strict();
 export const password = z
   .string()
-  .min(12)
+  .min(8)
   .max(72)
   .refine(
     (value) => new TextEncoder().encode(value).length <= 72,

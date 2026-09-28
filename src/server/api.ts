@@ -379,7 +379,7 @@ export async function handleApi(request: Request, db: Knex): Promise<Response> {
               .first())
           )
             fail(422, "Choose an active role.");
-          if (input.password) input.password = await hash(input.password, 12);
+          if (input.password) input.password = await hash(input.password, 8);
         }
         if (id)
           await trx(table)

@@ -396,7 +396,7 @@ export default function CrudTable(props: Props) {
                                 !(field.type === "password" && editing()?.id)
                               }
                               minlength={
-                                field.type === "password" ? 12 : undefined
+                                field.type === "password" ? 8 : undefined
                               }
                               maxlength={field.max}
                               min={field.type === "number" ? 0 : undefined}

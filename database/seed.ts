@@ -9,9 +9,9 @@ export const permissionNames = [
 ];
 export async function seed(db: Knex) {
   const password = process.env.ADMIN_PASSWORD;
-  if (!password || password.length < 12)
+  if (!password || password.length < 8)
     throw new Error(
-      "Set ADMIN_PASSWORD to at least 12 characters before seeding.",
+      "Set ADMIN_PASSWORD to at least 8 characters before seeding.",
     );
   const account = userSchema.parse({
     username: process.env.ADMIN_USERNAME || "admin",
@@ -32,7 +32,7 @@ export async function seed(db: Knex) {
     if (!(await trx("users").first()))
       await trx("users").insert({
         username: account.username,
-        password: await hash(password, 12),
+        password: await hash(password, 8),
         role_id: 1,
       });
     if (!(await trx("system_settings").first()))

@@ -9,7 +9,7 @@ Requires Node.js 24+ and MySQL 8+. Use a **new database** for this application. 
 1. Run `npm ci`.
 2. Copy `.env.example` to `.env` if you do not already have one. If using the previous project's `.env`, update it with the new settings rather than overwriting it blindly.
 3. Create an empty MySQL database and set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
-4. Generate `JWT_SECRET` with `openssl rand -hex 32`. Set `ADMIN_USERNAME` and an `ADMIN_PASSWORD` of at least 12 characters.
+4. Generate `JWT_SECRET` with `openssl rand -hex 32`. Set `ADMIN_USERNAME` and an `ADMIN_PASSWORD` of at least 8 characters.
 5. Set `APP_ORIGIN` to the exact browser origin (default `http://localhost:6229`).
 6. Run:
 

@@ -106,7 +106,7 @@ export function createWishScene(container, onRound) {
         card.object.position.x +=
           delta * (38 + (card.object.position.z + 200) * 0.035);
       if (
-        (reduced.matches && card.age > 12) ||
+        (reduced.matches && card.age > 8) ||
         card.object.position.x > worldWidth() / 2 + 500 * card.scale
       )
         remove(card);
