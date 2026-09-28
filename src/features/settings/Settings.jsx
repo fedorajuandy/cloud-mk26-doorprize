@@ -22,6 +22,7 @@ export default function Settings() {
     [busy, setBusy] = createSignal(false);
   const [branding, setBranding] = createSignal({
     logo_url: "",
+    favicon_url: "/mandiri.svg",
     login_bg_color: "#f3f4f6",
   });
   async function loadRoles() {
@@ -86,11 +87,14 @@ export default function Settings() {
         method: "PUT",
         body: JSON.stringify({
           logo_url: branding().logo_url,
+          favicon_url: branding().favicon_url,
           login_bg_color: branding().login_bg_color,
         }),
       });
+      const icon = document.querySelector('link[rel="icon"]');
+      if (icon) icon.setAttribute("href", `/api/favicon?v=${Date.now()}`);
       setNotice(
-        "Branding saved. It will appear the next time a page is opened.",
+        "Branding saved. Tab icon updated. It will appear the next time a page is opened.",
       );
     } catch (e) {
       setError(e.message);
@@ -280,7 +284,9 @@ export default function Settings() {
             <div>
               <p class="eyebrow">SYSTEM SETTINGS</p>
               <h1>UI customization</h1>
-              <p class="muted">Customize the logo and login background.</p>
+              <p class="muted">
+                Customize the logo, browser tab icon, and login background.
+              </p>
             </div>
           </div>
           <form class="card settings-card" onSubmit={saveBranding}>
@@ -302,6 +308,35 @@ export default function Settings() {
                 Use a local absolute path or an HTTPS image URL.
               </small>
             </label>
+            <label>
+              Browser tab icon URL
+              <input
+                required
+                maxlength="255"
+                placeholder="/mandiri.svg"
+                value={branding().favicon_url || "/mandiri.svg"}
+                onInput={(e) =>
+                  setBranding((v) => ({
+                    ...v,
+                    favicon_url: e.currentTarget.value,
+                  }))
+                }
+              />
+              <small class="muted">
+                Use a square SVG, PNG, or ICO image. Place local files in
+                public/ and enter /filename.svg, or use an HTTPS image URL.
+              </small>
+            </label>
+            <div>
+              <p class="muted">Browser tab icon preview</p>
+              <img
+                src={branding().favicon_url || "/mandiri.svg"}
+                alt="Browser tab icon preview"
+                width="32"
+                height="32"
+                style={{ "object-fit": "contain" }}
+              />
+            </div>
             <label>
               Login background
               <input

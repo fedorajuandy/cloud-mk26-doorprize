@@ -316,8 +316,8 @@ These routes support the existing admin CMS. They require Super Admin except GET
 | GET                     | `/api/role-permissions`         | All active roles with their active permission arrays                                |
 | GET                     | `/api/role-permissions/:roleId` | One role with its permissions                                                       |
 | PUT                     | `/api/role-permissions/:roleId` | Atomically replace grants with `{permission_ids:[1,2]}`; empty array removes grants |
-| GET                     | `/api/settings`                 | Current `logo_url` and `login_bg_color` settings                                    |
-| PUT                     | `/api/settings`                 | `{logo_url:"/logo.svg", login_bg_color:"#f3f4f6"}`                                  |
+| GET                     | `/api/settings`                 | Current `logo_url`, `favicon_url`, and `login_bg_color` settings                    |
+| PUT                     | `/api/settings`                 | `{logo_url:"/logo.svg", favicon_url:"/mandiri.svg", login_bg_color:"#f3f4f6"}`      |
 
 User/role/permission list routes accept `page`, `limit`, `search`, and `deleted=true` and use the same `records`/`pagination` response structure. User passwords must contain 8–72 characters and at most 72 UTF-8 bytes; change a password with PUT `/api/users/:id` and `{password:"NEW_PASSWORD"}`. Roles 1 and 2 are protected. Super Admin accounts cannot be demoted/archived, and the current account cannot archive itself. A role with active users cannot be archived. Permission names use lowercase letters, digits, and underscores, beginning with a letter. Logo URLs must be a local absolute path or HTTPS URL; background colors must be six-digit hex values.
 
@@ -347,3 +347,5 @@ const imported = await fetch("/api/participants/import", {
 }); // Do not manually set multipart Content-Type.
 console.log(await imported.json());
 ```
+
+Favicon settings accept local image paths outside `/api/` or HTTPS URLs. `favicon_url` is optional on PUT; omitting it preserves the current icon. The default is `/mandiri.svg`. Public `GET /api/favicon` redirects to the saved icon with `Cache-Control: no-store`, so it works on the login page too. In admin, change **System settings → UI customization → Browser tab icon URL**. Saving refreshes the current tab icon; other tabs use the new icon on their next page load. Use a version query (e.g. `/favicon.png?v=2`) when replacing an image at the same URL.

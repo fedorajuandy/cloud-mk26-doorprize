@@ -75,8 +75,13 @@ test("admin signs in, manages participants, roles, accounts, permissions, and br
     page.getByRole("cell", { name: "eventstaff", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "UI customization" }).click();
+  await page.getByLabel("Browser tab icon URL").fill("/mandiri.svg?v=test");
   await page.getByLabel("Login background").fill("#eaf0ff");
   await page.getByRole("button", { name: "Save branding" }).click();
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
+    "href",
+    /^\/api\/favicon\?v=/,
+  );
   await expect(page.getByRole("status")).toContainText("Branding saved");
   await page.getByRole("switch", { name: "Dark mode", exact: true }).click();
   await expect(page.locator(".app-shell")).toHaveClass(/dark/);

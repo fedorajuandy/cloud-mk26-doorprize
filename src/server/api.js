@@ -39,10 +39,21 @@ export async function handleApi(request, db) {
     }
     if (resource === "logout" && !rawId && method === "POST")
       return json(null, 200, { "Set-Cookie": cookie("", true) });
+    if (resource === "favicon" && !rawId && !action && method === "GET") {
+      const settings = await db("system_settings").orderBy("id").first();
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: settings?.favicon_url || "/mandiri.svg",
+          "Cache-Control": "no-store",
+        },
+      });
+    }
     if (resource === "settings" && !rawId && method === "GET")
       return json(
         (await db("system_settings").orderBy("id").first()) || {
           logo_url: "/abracodebra.svg",
+          favicon_url: "/mandiri.svg",
           login_bg_color: "#f3f4f6",
         },
       );

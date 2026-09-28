@@ -42,6 +42,18 @@ export const settings = z
       (v) => /^\/(?!\/)/.test(v) || /^https:\/\//.test(v),
       "Use a local absolute path or HTTPS URL.",
     ),
+    favicon_url: text(255)
+      .refine((value) => {
+        if (/[\\\s]/.test(value)) return false;
+        if (/^\/(?!\/)/.test(value))
+          return !value.split(/[?#]/)[0].startsWith("/api/");
+        try {
+          return new URL(value).protocol === "https:";
+        } catch {
+          return false;
+        }
+      }, "Use a local image path outside /api/ or an HTTPS image URL.")
+      .optional(),
     login_bg_color: z
       .string()
       .regex(/^#[0-9a-fA-F]{6}$/, "Use a six-digit hex color."),

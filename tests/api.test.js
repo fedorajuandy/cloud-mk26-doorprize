@@ -5,6 +5,7 @@ import mysql from "mysql2/promise";
 import { randomBytes } from "node:crypto";
 import { seed } from "../seeds/001_admin.js";
 import { handleApi } from "../src/server/api.js";
+import { tokenFor } from "../src/server/auth.js";
 const useMysql = process.env.MYSQL_TEST === "1";
 const testDatabaseName = `mk26_test_${randomBytes(8).toString("hex")}`;
 let mysqlAdmin;
@@ -369,4 +370,48 @@ test("invalid session configuration reports an actionable service error", async 
   } finally {
     process.env.JWT_SECRET = originalSecret;
   }
+});
+
+test("favicon settings persist, validate URLs and publicly redirect without caching", async () => {
+  const settings = {
+    logo_url: "/logo.svg",
+    login_bg_color: "#ffffff",
+    favicon_url: "/mandiri.svg?v=2",
+  };
+  assert.equal((await request("/settings", "PUT", settings)).status, 200);
+  assert.equal(
+    (await request("/settings", "GET", undefined, "")).body.data.favicon_url,
+    settings.favicon_url,
+  );
+  const response = await handleApi(
+    new Request("http://localhost/api/favicon"),
+    db,
+  );
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), settings.favicon_url);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  for (const favicon_url of [
+    "javascript:alert(1)",
+    "//example.com/icon.png",
+    "/api/favicon",
+    "http://example.com/icon.png",
+    "/\\example.com/icon.png",
+  ])
+    assert.equal(
+      (await request("/settings", "PUT", { ...settings, favicon_url })).status,
+      422,
+    );
+  const { favicon_url, ...legacy } = settings;
+  assert.equal((await request("/settings", "PUT", legacy)).status, 200);
+  assert.equal((await request("/settings")).body.data.favicon_url, favicon_url);
+  const [viewerId] = await db("users").insert({
+    username: "faviconviewer",
+    password: "unused",
+    role_id: 2,
+  });
+  const viewerCookie = `admin_session=${await tokenFor({ id: viewerId, password: "unused" })}`;
+  assert.equal(
+    (await request("/settings", "PUT", settings, viewerCookie)).status,
+    403,
+  );
 });
