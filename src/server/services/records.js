@@ -3,6 +3,7 @@ import { z } from "zod";
 import { authorize } from "../auth.js";
 import { fail } from "../errors.js";
 import { body, idSchema, json } from "../http.js";
+import { listParticipants } from "../participants/query.js";
 import * as schemas from "../validation.js";
 const definitions = {
   participants: schemas.participant,
@@ -51,6 +52,8 @@ export async function handleRecords({
       if (!row) fail(404, "Record not found.");
       return json(table === "users" ? safeUser(row) : row);
     }
+    if (table === "participants")
+      return json(await listParticipants(db, url.searchParams));
     const page = z.coerce
       .number()
       .int()
@@ -84,25 +87,6 @@ export async function handleRecords({
       query.where((q) => {
         columns.forEach((c) => q.orWhere(c, "like", `%${search}%`));
       });
-    }
-    if (table === "participants") {
-      if (url.searchParams.has("babak"))
-        query.where(
-          "babak",
-          z.coerce.number().int().min(0).parse(url.searchParams.get("babak")),
-        );
-      for (const [key, op] of [
-        ["start_date", ">="],
-        ["end_date", "<="],
-      ])
-        if (url.searchParams.get(key)) {
-          const date = z.iso.date().parse(url.searchParams.get(key));
-          query.where(
-            "created_at",
-            op,
-            `${date} ${key === "start_date" ? "00:00:00" : "23:59:59"}`,
-          );
-        }
     }
     const [count, rows] = await Promise.all([
       query.clone().count({ count: "*" }).first(),

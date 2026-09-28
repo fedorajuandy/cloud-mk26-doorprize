@@ -18,13 +18,19 @@ test("admin signs in, manages participants, roles, accounts, permissions, and br
   await page.getByLabel("Unit kerja").fill("Finance");
   await page.getByLabel("Phone number").fill("08123456789");
   await page.getByRole("dialog").getByLabel("Babak").fill("1");
-  await page.getByLabel("Prize").fill("Bicycle");
+  await page
+    .getByRole("dialog")
+    .getByLabel("Prize", { exact: true })
+    .fill("Bicycle");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(
     page.getByRole("cell", { name: "Ayu Browser", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByLabel("Prize").fill("Laptop");
+  await page
+    .getByRole("dialog")
+    .getByLabel("Prize", { exact: true })
+    .fill("Laptop");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(
     page.getByRole("cell", { name: "Laptop", exact: true }),
@@ -72,7 +78,7 @@ test("admin signs in, manages participants, roles, accounts, permissions, and br
   await page.getByLabel("Login background").fill("#eaf0ff");
   await page.getByRole("button", { name: "Save branding" }).click();
   await expect(page.getByRole("status")).toContainText("Branding saved");
-  await page.getByRole("button", { name: "Dark mode", exact: true }).click();
+  await page.getByRole("switch", { name: "Dark mode", exact: true }).click();
   await expect(page.locator(".app-shell")).toHaveClass(/dark/);
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);

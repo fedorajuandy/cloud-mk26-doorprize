@@ -62,8 +62,18 @@ export default function AdminLayout(props) {
           </Show>
         </nav>
         <div class="sidebar-footer">
-          <button class="secondary" onClick={theme}>
-            {dark() ? "Light mode" : "Dark mode"}
+          <button
+            class="theme-switch"
+            role="switch"
+            aria-checked={dark()}
+            aria-label="Dark mode"
+            onClick={theme}
+            title={dark() ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            <span>{dark() ? "☾ Dark mode" : "☀ Light mode"}</span>
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb" />
+            </span>
           </button>
           <div class="identity">
             <strong>{user()?.username}</strong>

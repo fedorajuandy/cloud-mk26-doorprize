@@ -41,7 +41,7 @@ export default function Login() {
     >
       <section class="login-card">
         <img class="login-logo" src={settings().logo_url} alt="Company logo" />
-        <p class="eyebrow">MK26 DOORPRIZE</p>
+        <p class="eyebrow">MANDIRI CARNAVAL 2026 DOORPRIZE</p>
         <h1>Admin portal</h1>
         <p class="muted">Sign in to manage your participants.</p>
         <form onSubmit={submit}>

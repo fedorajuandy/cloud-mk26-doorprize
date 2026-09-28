@@ -65,7 +65,8 @@ If an existing table is incompatible, migration stops with the table name and mi
 
 ## Admin features
 
-- Participants: create, read, edit, archive, restore, search, date/round filters, and server pagination.
+- Participants: create, read, edit, archive, restore, search, prize/null-prize/date/round filters, and selectable server pagination.
+- Import participants from Excel or CSV with row validation and an Excel template; export all matching records or the current page as XLSX.
 - All participant fields: full name, NIP, unit kerja, phone number (`no_hp`), prize, and round (`babak`). NIP and phone numbers remain strings so leading zeros are preserved.
 - Administrators: create accounts, assign roles, update passwords, archive, and restore.
 - Roles and permission registry CRUD, plus a permission-assignment checklist.
@@ -91,6 +92,8 @@ DELETE is a soft delete. Administrative tables record creator/updater/deleter ID
 
 ## HTTP API
 
+See [the backend integration guide](docs/API_GUIDE.md) for authentication, complete endpoint/payload documentation, participant filters, file import/export, and copyable curl/browser examples.
+
 Success: `{ "data": ... }`. Errors: `{ "error": { "message": "..." } }`.
 
 | Method                  | Path                                                                               | Purpose                                                                                         |
@@ -109,7 +112,7 @@ Success: `{ "data": ... }`. Errors: `{ "error": { "message": "..." } }`.
 | GET                     | `/api/role-permissions`, `/api/role-permissions/:roleId`                           | Roles with active permission assignments                                                        |
 | PUT                     | `/api/role-permissions/:roleId`                                                    | Atomically replace assignments with `{permission_ids: [1, 2]}`; use an empty list to remove all |
 
-List endpoints accept `page` (default 1), `limit` (default 20, maximum 100), `search`, and `deleted=true`. Participants also accept `start_date`, `end_date` (YYYY-MM-DD, inclusive), and `babak`. Responses contain `records` and `pagination: {page, limit, total, total_pages}`. Dates are interpreted in the database's timezone. All write payloads are JSON; unknown fields are rejected. PUT/PATCH accept partial fields. A user's password can be changed with PUT `/api/users/:id` and `{password: "..."}`. Password hashes are never returned.
+List endpoints accept `page` (default 1), `limit` (default 20, maximum 100), `search`, and `deleted=true`. Participants also accept `start_date`, `end_date` (YYYY-MM-DD, inclusive), `babak`, exact `prize`, and `without_prize=true`. Responses contain `records` and `pagination: {page, limit, total, total_pages}`. Dates are interpreted in the database's timezone. All write payloads are JSON; unknown fields are rejected. PUT/PATCH accept partial fields. A user's password can be changed with PUT `/api/users/:id` and `{password: "..."}`. Password hashes are never returned.
 
 Example participant payload:
 

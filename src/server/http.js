@@ -16,27 +16,31 @@ export const idSchema = z
   .string()
   .regex(/^[1-9]\d*$/)
   .max(20);
-export async function body(request) {
-  if (!request.headers.get("content-type")?.includes("application/json"))
-    fail(415, "Use application/json.");
+export async function readBytes(request, maximum) {
+  if (Number(request.headers.get("content-length")) > maximum)
+    fail(413, "Request body is too large.");
   const reader = request.body?.getReader();
-  if (!reader) fail(400, "A JSON body is required.");
-  const decoder = new TextDecoder();
-  let bytes = 0,
-    raw = "";
+  if (!reader) fail(400, "A request body is required.");
+  let size = 0;
+  const chunks = [];
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    bytes += value.byteLength;
-    if (bytes > 65536) {
+    size += value.byteLength;
+    if (size > maximum) {
       await reader.cancel();
       fail(413, "Request body is too large.");
     }
-    raw += decoder.decode(value, { stream: true });
+    chunks.push(Buffer.from(value));
   }
-  raw += decoder.decode();
+  return Buffer.concat(chunks, size);
+}
+export async function body(request) {
+  if (!request.headers.get("content-type")?.includes("application/json"))
+    fail(415, "Use application/json.");
+  const raw = await readBytes(request, 65536);
   try {
-    return JSON.parse(raw);
+    return JSON.parse(raw.toString("utf8"));
   } catch {
     return fail(400, "Invalid JSON.");
   }

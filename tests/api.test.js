@@ -348,3 +348,25 @@ test("permission assignment uses bounded queries for large permission sets", asy
     100,
   );
 });
+
+test("invalid session configuration reports an actionable service error", async () => {
+  const originalSecret = process.env.JWT_SECRET;
+  try {
+    for (const value of ["", "too-short"]) {
+      process.env.JWT_SECRET = value;
+      const result = await request("/login", "POST", {
+        username: "testadmin",
+        password: process.env.ADMIN_PASSWORD,
+      });
+      assert.equal(result.status, 503);
+      assert.match(
+        result.body.error.message,
+        /JWT_SECRET must contain at least 32 characters/,
+      );
+      assert.equal(result.cookie, "");
+      assert.equal((await request("/me")).status, 503);
+    }
+  } finally {
+    process.env.JWT_SECRET = originalSecret;
+  }
+});

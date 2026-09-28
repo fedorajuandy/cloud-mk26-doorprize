@@ -49,6 +49,19 @@ export async function handleApi(request, db) {
     const user = await authenticate(request, db);
     if (resource === "me" && !rawId && method === "GET") return json(user);
     const context = { db, user, resource, rawId, action, method, url, request };
+    if (resource === "participants" && !action) {
+      if (rawId === "import") {
+        const { importParticipants } = await import("./participants/import.js");
+        return await importParticipants(context);
+      }
+      if (rawId === "export" || rawId === "import-template") {
+        const { exportParticipants, importTemplate } =
+          await import("./participants/export.js");
+        return await (rawId === "export"
+          ? exportParticipants(context)
+          : importTemplate(context));
+      }
+    }
     if (resource === "settings" && !rawId && method === "PUT")
       return await updateSettings(context);
     if (resource === "role-permissions") return await handleRoles(context);

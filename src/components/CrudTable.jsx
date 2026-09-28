@@ -1,6 +1,7 @@
 import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
-import { api } from "../lib/api.js";
+import { api, download } from "../lib/api.js";
 import Modal from "./Modal.jsx";
+import ImportParticipants from "../features/participants/ImportParticipants.jsx";
 export default function CrudTable(props) {
   const [records, setRecords] = createSignal([]),
     [page, setPage] = createSignal(1),
@@ -10,7 +11,13 @@ export default function CrudTable(props) {
     [deleted, setDeleted] = createSignal(false),
     [start, setStart] = createSignal(""),
     [end, setEnd] = createSignal(""),
-    [round, setRound] = createSignal("");
+    [round, setRound] = createSignal(""),
+    [prizeMode, setPrizeMode] = createSignal("all"),
+    [prize, setPrize] = createSignal(""),
+    [limit, setLimit] = createSignal(20);
+  const [importing, setImporting] = createSignal(false),
+    [exporting, setExporting] = createSignal(false),
+    [exportScope, setExportScope] = createSignal("all");
   const [loading, setLoading] = createSignal(true),
     [error, setError] = createSignal(""),
     [notice, setNotice] = createSignal(""),
@@ -18,6 +25,21 @@ export default function CrudTable(props) {
   const [editing, setEditing] = createSignal(null),
     [confirmation, setConfirmation] = createSignal(null),
     [formError, setFormError] = createSignal("");
+  function filters() {
+    const params = new URLSearchParams({
+      page: String(page()),
+      limit: String(limit()),
+      search: search(),
+      deleted: String(deleted()),
+    });
+    if (start()) params.set("start_date", start());
+    if (end()) params.set("end_date", end());
+    if (round() !== "") params.set("babak", round());
+    if (prizeMode() === "none") params.set("without_prize", "true");
+    if (prizeMode() === "exact" && prize().trim())
+      params.set("prize", prize().trim());
+    return params;
+  }
   let sequence = 0;
   let controller;
   async function refresh() {
@@ -26,15 +48,7 @@ export default function CrudTable(props) {
     controller = new AbortController();
     setLoading(true);
     setError("");
-    const params = new URLSearchParams({
-      page: String(page()),
-      limit: "20",
-      search: search(),
-      deleted: String(deleted()),
-    });
-    if (start()) params.set("start_date", start());
-    if (end()) params.set("end_date", end());
-    if (round() !== "") params.set("babak", round());
+    const params = filters();
     try {
       const data = await api(`/${props.resource}?${params}`, {
         signal: controller.signal,
@@ -58,6 +72,9 @@ export default function CrudTable(props) {
     start();
     end();
     round();
+    prizeMode();
+    prize();
+    limit();
     props.resource;
     ++sequence;
     controller?.abort();
@@ -131,6 +148,26 @@ export default function CrudTable(props) {
       setBusy(false);
     }
   }
+  async function exportFile() {
+    setExporting(true);
+    setError("");
+    try {
+      const params = filters();
+      params.set("scope", exportScope());
+      await download(`/participants/export?${params}`, "participants.xlsx");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+  function imported(count) {
+    setImporting(false);
+    setNotice(
+      `${count} participants imported. New records are active; clear filters if they are not visible.`,
+    );
+    void refresh();
+  }
   const label = (key) => props.fields.find((f) => f.key === key)?.label || key;
   const value = (row, key) => {
     const field = props.fields.find((f) => f.key === key);
@@ -149,11 +186,18 @@ export default function CrudTable(props) {
           <h1>{props.title}</h1>
           <p class="muted">{props.description}</p>
         </div>
-        <Show when={props.canCreate && !deleted()}>
-          <button class="primary" onClick={() => open()}>
-            + Add {props.singular.toLowerCase()}
-          </button>
-        </Show>
+        <div class="page-actions">
+          <Show when={props.participants && props.canCreate}>
+            <button class="secondary" onClick={() => setImporting(true)}>
+              Import participants
+            </button>
+          </Show>
+          <Show when={props.canCreate && !deleted()}>
+            <button class="primary" onClick={() => open()}>
+              + Add {props.singular.toLowerCase()}
+            </button>
+          </Show>
+        </div>
       </div>
       <Show when={notice()}>
         <p role="status" class="success">
@@ -223,6 +267,34 @@ export default function CrudTable(props) {
               />
             </label>
             <label>
+              Prize filter
+              <select
+                value={prizeMode()}
+                onChange={(event) => {
+                  setPrizeMode(event.currentTarget.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">All prizes</option>
+                <option value="none">Without prize (null)</option>
+                <option value="exact">Same prize</option>
+              </select>
+            </label>
+            <Show when={prizeMode() === "exact"}>
+              <label>
+                Prize name
+                <input
+                  type="text"
+                  placeholder="Enter prize name"
+                  value={prize()}
+                  onInput={(event) => {
+                    setPrize(event.currentTarget.value);
+                    setPage(1);
+                  }}
+                />
+              </label>
+            </Show>
+            <label>
               Babak
               <input
                 type="number"
@@ -242,11 +314,39 @@ export default function CrudTable(props) {
                 setStart("");
                 setEnd("");
                 setRound("");
+                setPrizeMode("all");
+                setPrize("");
                 setPage(1);
               }}
             >
               Clear filters
             </button>
+          </div>
+        </Show>
+        <Show when={props.participants}>
+          <div class="export-toolbar">
+            <span class="muted">Excel exports use the selected filters.</span>
+            <div class="toolbar-actions">
+              <select
+                aria-label="Export scope"
+                value={exportScope()}
+                onChange={(event) => setExportScope(event.currentTarget.value)}
+              >
+                <option value="all">All matching records</option>
+                <option value="page">Current page</option>
+              </select>
+              <button
+                class="secondary"
+                disabled={
+                  exporting() ||
+                  loading() ||
+                  (prizeMode() === "exact" && !prize().trim())
+                }
+                onClick={exportFile}
+              >
+                {exporting() ? "Exporting…" : "Export Excel"}
+              </button>
+            </div>
           </div>
         </Show>
         <Show when={error()}>
@@ -333,6 +433,21 @@ export default function CrudTable(props) {
           </table>
         </div>
         <footer class="pagination">
+          <label class="page-size">
+            Rows per page
+            <select
+              aria-label="Rows per page"
+              value={limit()}
+              onChange={(event) => {
+                setLimit(Number(event.currentTarget.value));
+                setPage(1);
+              }}
+            >
+              <For each={[10, 20, 50, 100]}>
+                {(size) => <option value={size}>{size}</option>}
+              </For>
+            </select>
+          </label>
           <span>
             {total()} records · Page {page()} of {pages()}
           </span>
@@ -354,6 +469,9 @@ export default function CrudTable(props) {
           </div>
         </footer>
       </div>
+      <Show when={importing()}>
+        <ImportParticipants close={() => setImporting(false)} done={imported} />
+      </Show>
       <Show when={editing()}>
         <Modal
           title={`${editing().id ? "Edit" : "Add"} ${props.singular.toLowerCase()}`}

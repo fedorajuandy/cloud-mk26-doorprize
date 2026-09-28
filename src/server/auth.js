@@ -7,7 +7,10 @@ const fingerprint = (password) =>
 function secret() {
   const value = process.env.JWT_SECRET;
   if (!value || value.length < 32)
-    throw new Error("JWT_SECRET must contain at least 32 characters.");
+    fail(
+      503,
+      "Sign-in is unavailable: JWT_SECRET must contain at least 32 characters. Update the server configuration and restart.",
+    );
   return new TextEncoder().encode(value);
 }
 export function cookie(token, expired = false) {
@@ -29,9 +32,10 @@ export async function authenticate(request, db) {
     .find((v) => v.startsWith("admin_session="))
     ?.slice(14);
   if (!token) return fail(401, "Please sign in.");
+  const signingKey = secret();
   let payload;
   try {
-    payload = (await jwtVerify(token, secret(), { algorithms: ["HS256"] }))
+    payload = (await jwtVerify(token, signingKey, { algorithms: ["HS256"] }))
       .payload;
   } catch {
     return fail(401, "Your session has expired. Please sign in.");

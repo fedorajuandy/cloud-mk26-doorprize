@@ -6,7 +6,7 @@ export default createHandler(() => (
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>MK26 · Admin CMS</title>
+          <title>Mandiri Carnaval 2026 · Doorprize</title>
           {props.assets}
         </head>
         <body>
