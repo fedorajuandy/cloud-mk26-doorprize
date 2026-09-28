@@ -1,14 +1,14 @@
 # MK26 Doorprize Admin
 
-A SolidStart 2 fullstack CMS using TypeScript, Solid, HTTP JSON API routes, Knex, and MySQL. The schema in `schema/schema.dbml` is the source of truth. The old projects are retained under `legacy/` for reference; they are not built or served. The existing `utils/utility_javascript` submodule is also not a runtime dependency.
+A SolidStart 2 fullstack CMS using JavaScript, Solid, HTTP JSON API routes, Knex, and MySQL. The schema in `schema/schema.dbml` is the source of truth. The existing `utils/utility_javascript` submodule is also not a runtime dependency.
 
 ## Setup
 
-Requires Node.js 24+ and MySQL 8+. Use a **new database** for this application. The migration creates the six DBML tables; it does not modify or import an existing Wishes installation.
+Requires Node.js 24+ and MySQL 8+ (or compatible MariaDB). You can use either a new database or an existing database with compatible admin tables.
 
 1. Run `npm ci`.
 2. Copy `.env.example` to `.env` if you do not already have one. If using the previous project's `.env`, update it with the new settings rather than overwriting it blindly.
-3. Create an empty MySQL database and set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
+3. Choose an existing compatible database or create an empty MySQL database, then set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
 4. Generate `JWT_SECRET` with `openssl rand -hex 32`. Set `ADMIN_USERNAME` and an `ADMIN_PASSWORD` of at least 8 characters.
 5. Set `APP_ORIGIN` to the exact browser origin (default `http://localhost:6229`).
 6. Run:
@@ -19,9 +19,49 @@ npm run db:seed
 npm run dev
 ```
 
-Open `http://localhost:6229` and sign in with the seeded account. There is no default admin password. Seeding preserves existing users and passwords. You may remove `ADMIN_PASSWORD` from the environment after setup.
+Open `http://localhost:6229` and sign in with the seeded account. There is no default admin password. Seeding preserves existing users, password hashes, roles, and branding. `ADMIN_PASSWORD` is only required when creating the first account; existing installations can seed participant permissions without supplying a new password. You may remove it from the environment after setup.
 
 For local development without MySQL, set `DB_CLIENT=sqlite` and `DB_FILE=./admin.sqlite` before migrating and seeding. MySQL remains the production default. No database is changed automatically at startup.
+
+## Repository layout
+
+```text
+config/                  Shared database configuration
+migrations/              JavaScript schema migrations and indexes
+seeds/                   Idempotent admin/permission initialization
+scripts/                 Native Node database and browser-test runners
+src/
+  components/            Shared layout, modal, and CRUD UI
+  features/              Participant and settings screens
+  lib/                   Browser HTTP client
+  routes/                Thin SolidStart page and API entrypoints
+  server/
+    services/            Record, role-assignment, and settings operations
+    api.js               HTTP dispatch and error handling
+    auth.js              Sessions and permission checks
+    http.js              Bounded JSON parsing and response helpers
+    validation.js        Input schemas
+schema/schema.dbml       Database model
+knexfile.js              Knex CLI configuration
+vite.config.js           SolidStart and production-server build
+```
+
+All application code, migrations, scripts, configuration, and tests use `.js` or `.jsx`. No application transpiler is needed for database commands or API tests. `jsconfig.json` supplies editor configuration; ESLint checks JavaScript and Solid reactivity. The structure follows the separation used in `activity-tracker`, while keeping SolidStart 2 and the current API contract.
+
+## Upgrading an existing database
+
+Run `npm run db:migrate`, then `npm run db:seed`. The runner tracks this application's migrations in **`cms_migrations`** rather than sharing another application's migration history. It validates required columns in existing tables before creating missing tables, preserves existing records and constraints, and adds the participant indexes. Existing migration history is untouched; removed historical migration files are not needed. No application table or data is dropped. Unrelated historical database tables are not read by the application and are not automatically deleted.
+
+If an existing table is incompatible, migration stops with the table name and missing columns before making application schema changes. Schema adoption is forward-only because rolling it back could drop pre-existing admin data. Run upgrades against a backed-up database. Re-running the migration or seed commands is supported.
+
+## Execution efficiency
+
+- One pooled database instance per server process; account and role authentication share a joined query, with no grant query for Super Admin.
+- Permission lists are grouped in linear time. Grant replacement uses batch updates/inserts under a role lock instead of a query per permission.
+- Request parsing, validation, and password hashing happen before write transactions acquire row locks.
+- List queries select a bounded page; count and page queries execute independently, and user lists exclude password hashes at the SQL level.
+- Participant archive/order and round filters have composite indexes. Substring search intentionally remains a portable `LIKE` query; at very large data sizes, use database-specific full-text search and cursor pagination.
+- Browser searches are debounced and obsolete requests are aborted. Permission/branding panels fetch their data on demand.
 
 ## Admin features
 
@@ -89,7 +129,7 @@ Example participant payload:
 ## Production
 
 ```sh
-npm run typecheck
+npm run lint
 npm test
 npm run build
 npm start
@@ -100,13 +140,13 @@ Build on the target OS/architecture because the optional SQLite driver is native
 ## Verification
 
 ```sh
-npm run typecheck
+npm run lint
 npm test
 npm run build
 npx playwright install chromium
 npm run test:e2e
 ```
 
-API tests run against an isolated in-memory SQLite database. Browser tests run the **production build** on port 6339 with a temporary database, then remove it. They cover login, participant creation/edit/archive/restore, role creation and permissions, account creation, branding, dark mode, logout, and read-only role access. They do not access the database configured in `.env`. Run `npm run test:mysql` to run the same API suite through the MySQL driver. It uses connection credentials from `.env`, creates a uniquely named temporary database, and drops that database on completion; the account needs CREATE/DROP DATABASE privileges. It never uses the configured `DB_NAME`. Verify deployment credentials and schema creation in the target environment.
+API and migration tests run against isolated in-memory SQLite databases. Migration regressions cover an existing admin schema, unrelated migration history, preservation of rows, repeated runs, and rejection of incompatible tables. Browser tests run the **production build** on port 6339 with a temporary database, then remove it. They cover login, participant creation/edit/archive/restore, role creation and permissions, account creation, branding, dark mode, logout, and read-only role access. They do not access the database configured in `.env`. Run `npm run test:mysql` to run the same API suite through the MySQL driver. It uses connection credentials from `.env`, creates a uniquely named temporary database, and drops that database on completion; the account needs CREATE/DROP DATABASE privileges. It never uses the configured `DB_NAME`. Verify deployment credentials and schema creation in the target environment.
 
 Framework reference: [SolidStart 2 configuration](https://docs.solidjs.com/solid-start/v2/reference/config/solid-start).

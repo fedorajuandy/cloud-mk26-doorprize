@@ -1,8 +1,0 @@
-@import "tailwindcss";
-
-/* Force Tailwind to only apply dark mode when the .dark class is present */
-@custom-variant dark (&:where(.dark, .dark *));
-
-body {
-  background-color: #f3f4f6; /* Default gray-100 */
-}

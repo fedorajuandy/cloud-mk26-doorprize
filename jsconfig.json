@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "config",
+    "migrations",
+    "seeds",
+    "scripts",
+    "tests",
+    "*.js"
+  ],
+  "exclude": ["node_modules", ".output", "utils"]
+}
