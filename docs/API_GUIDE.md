@@ -379,3 +379,9 @@ CSV/XLSX imports accept optional `sesi` (alias `session`), with blank cells trea
 ```json
 { "updates": [{ "id": 101, "sesi": 1, "babak": 2, "prize": "Laptop" }] }
 ```
+
+## Reset all participant results
+
+`POST /api/participants/reset-results` requires a Super Admin session. Send `{"confirmation":"RESET ALL RESULTS"}`. One atomic update sets `prize`, `babak`, and `sesi` to null for **all participants, including archived records**, regardless of filters. Participant details and archive status remain unchanged; changed rows receive a new `updated_at`. Active participants become eligible for draws again.
+
+Returns `200` with `{"data":{"updated":2800}}`, counting rows whose results changed. Repeating the reset returns zero if all three fields are already null. Incorrect confirmation returns `422`; non-Super Admins receive `403`. The admin action is **Participants → Reset all results** and requires typing `RESET ALL RESULTS` before confirming.

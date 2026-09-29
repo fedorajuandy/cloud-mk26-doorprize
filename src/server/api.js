@@ -65,6 +65,11 @@ export async function handleApi(request, db) {
         const { seedParticipants } = await import("./participants/seed.js");
         return await seedParticipants(context);
       }
+      if (rawId === "reset-results") {
+        const { resetParticipantResults } =
+          await import("./participants/reset.js");
+        return await resetParticipantResults(context);
+      }
       if (rawId === "purge") {
         const { purgeParticipants } = await import("./participants/purge.js");
         return await purgeParticipants(context);

@@ -126,6 +126,30 @@ test("participant file import, shared filters, Excel export and theme indicator"
     page.getByRole("cell", { name: "000000123456789012" }),
   ).toBeVisible();
   await page
+    .getByRole("button", { name: "Reset all results", exact: true })
+    .click();
+  const resetDialog = page.getByRole("dialog", {
+    name: "Reset all participant results",
+  });
+  const resetButton = resetDialog.getByRole("button", {
+    name: "Reset all participant results",
+    exact: true,
+  });
+  await expect(resetButton).toBeDisabled();
+  await resetDialog
+    .getByLabel("Type RESET ALL RESULTS to confirm")
+    .fill("RESET ALL RESULTS");
+  await resetButton.click();
+  await expect(resetDialog).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText("Results reset for");
+  const preserved = page.getByRole("row").filter({
+    has: page.getByRole("cell", { name: "Import Excel", exact: true }),
+  });
+  await expect(preserved).toBeVisible();
+  await expect(
+    preserved.getByRole("cell", { name: "Tablet", exact: true }),
+  ).toHaveCount(0);
+  await page
     .getByRole("button", { name: "Delete all participants", exact: true })
     .click();
   const purgeDialog = page.getByRole("dialog", {
@@ -168,7 +192,7 @@ test("participant file import, shared filters, Excel export and theme indicator"
   );
   await expect(page.getByText("2800 records · Page 1 of 280")).toBeVisible();
   await expect(
-    page.getByRole("cell", { name: "Dummy Participant 2800", exact: true }),
+    page.getByRole("cell", { name: "Participant 2800", exact: true }),
   ).toBeVisible();
   expect(errors).toEqual([]);
 });

@@ -471,10 +471,9 @@ test("optional dummy seed appends 2800 eligible records and purge removes only p
     adminTables.map((table) => db(table).select("*")),
   );
   assert.equal(await seedDummyParticipants(db), 2800);
-  const dummy = await db("participants").where(
-    "full_name",
-    "like",
-    "Dummy Participant %",
+  const dummy = await db("participants").whereNotIn(
+    "id",
+    existing.map((row) => row.id),
   );
   assert.equal(dummy.length, 2800);
   assert.equal(new Set(dummy.map((row) => row.nip)).size, 2800);
@@ -640,5 +639,54 @@ test("sesi works across CRUD, batch, combined filters, import and Excel export",
     (await upload("full_name,nip,unit_kerja,sesi\nInvalid,S004,Finance,-1"))
       .status,
     422,
+  );
+});
+
+test("reset results clears every result including archives while preserving participant details", async () => {
+  await sample();
+  await db("participants").update({ sesi: 2 });
+  const before = await db("participants").orderBy("id");
+  const reset = (confirmation, auth = cookie, extra = {}) =>
+    request(
+      "/participants/reset-results",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...extra },
+        body: JSON.stringify({ confirmation }),
+      },
+      auth,
+    );
+  assert.equal((await reset("wrong")).status, 422);
+  assert.equal((await reset("RESET ALL RESULTS", viewerCookie)).status, 403);
+  assert.equal((await reset("RESET ALL RESULTS", "")).status, 401);
+  assert.equal(
+    (
+      await reset("RESET ALL RESULTS", cookie, {
+        origin: "https://another.example",
+      })
+    ).status,
+    403,
+  );
+  assert.equal((await request("/participants/reset-results")).status, 405);
+  assert.deepEqual(await db("participants").orderBy("id"), before);
+  const response = await reset("RESET ALL RESULTS");
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.updated, 5);
+  const after = await db("participants").orderBy("id");
+  assert.equal(after.length, before.length);
+  for (let i = 0; i < after.length; i++) {
+    const { prize, babak, sesi, updated_at, ...details } = after[i];
+    assert.equal(prize, null);
+    assert.equal(babak, null);
+    assert.equal(sesi, null);
+    assert.ok(updated_at);
+    const original = { ...before[i] };
+    for (const key of ["prize", "babak", "sesi", "updated_at"])
+      delete original[key];
+    assert.deepEqual(details, original);
+  }
+  assert.equal(
+    (await (await reset("RESET ALL RESULTS")).json()).data.updated,
+    0,
   );
 });

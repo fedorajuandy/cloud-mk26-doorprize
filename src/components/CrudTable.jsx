@@ -4,7 +4,9 @@ import Modal from "./Modal.jsx";
 import ImportParticipants from "../features/participants/ImportParticipants.jsx";
 import DeleteAllParticipants from "../features/participants/DeleteAllParticipants.jsx";
 import SeedParticipants from "../features/participants/SeedParticipants.jsx";
+import ResetParticipantResults from "../features/participants/ResetParticipantResults.jsx";
 export default function CrudTable(props) {
+  const [resettingResults, setResettingResults] = createSignal(false);
   const [seeding, setSeeding] = createSignal(false);
   const [purging, setPurging] = createSignal(false);
   const [records, setRecords] = createSignal([]),
@@ -185,6 +187,21 @@ export default function CrudTable(props) {
   };
   return (
     <section>
+      <Show when={resettingResults()}>
+        <ResetParticipantResults
+          close={() => setResettingResults(false)}
+          done={(count) => {
+            setResettingResults(false);
+            setNotice(`Results reset for ${count} participants.`);
+            setRound("");
+            setSession("");
+            setPrizeMode("all");
+            setPrize("");
+            setPage(1);
+            void refresh();
+          }}
+        />
+      </Show>
       <Show when={seeding()}>
         <SeedParticipants
           close={() => setSeeding(false)}
@@ -224,6 +241,11 @@ export default function CrudTable(props) {
           <p class="muted">{props.description}</p>
         </div>
         <div class="page-actions">
+          <Show when={props.participants && props.canResetResults}>
+            <button class="secondary" onClick={() => setResettingResults(true)}>
+              Reset all results
+            </button>
+          </Show>
           <Show when={props.participants && props.canSeed}>
             <button class="secondary" onClick={() => setSeeding(true)}>
               Add dummy participants

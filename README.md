@@ -170,3 +170,5 @@ npm run db:purge:participants -- --confirm="DELETE ALL PARTICIPANTS"
 Neither cleanup nor dummy seeding is automatic. These commands act on the database configured in `.env`.
 
 Session support: run `npm run db:migrate` to add nullable `participants.sesi`. Admin forms, filters, CRUD/batch APIs, CSV/XLSX imports, templates, and exports support it. New indexes `(deleted_at, sesi, id)` and `(deleted_at, sesi, babak, id)` support session-only and session/round filtering with ID pagination; the existing babak-only index remains.
+
+To keep participants but clear the draw results, Super Admins can use **Participants → Reset all results** and type `RESET ALL RESULTS`. This resets prize, babak, and sesi to null for all active and archived participants without deleting anyone. Filters do not restrict the reset; participant details and archive status are preserved.

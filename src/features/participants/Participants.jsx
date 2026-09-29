@@ -41,6 +41,7 @@ export default function Participants() {
         ]}
         participants
         canPurge={user.role_id === 1}
+        canResetResults={user.role_id === 1}
         canSeed={user.role_id === 1}
         canCreate={can("create")}
         canUpdate={can("update")}
