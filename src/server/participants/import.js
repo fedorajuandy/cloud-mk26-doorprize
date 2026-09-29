@@ -8,6 +8,7 @@ import { validateWorkbookArchive } from "./archive.js";
 const MAX_FILE = 5 * 1024 * 1024;
 const MAX_ROWS = 5000;
 const fields = [
+  "unique_id",
   "full_name",
   "nip",
   "unit_kerja",
@@ -19,6 +20,7 @@ const fields = [
   "profile_picture",
 ];
 const aliases = {
+  unique_id: "unique_id",
   full_name: "full_name",
   nama: "full_name",
   nama_lengkap: "full_name",
@@ -59,7 +61,7 @@ function headers(values) {
     seen.add(key);
     return key;
   });
-  for (const required of ["full_name", "nip", "unit_kerja"])
+  for (const required of ["unique_id", "full_name", "nip", "unit_kerja"])
     if (!seen.has(required)) fail(422, `Missing required column: ${required}.`);
   return keys;
 }
@@ -68,14 +70,14 @@ function cellText(cell, key) {
   if (value == null) return "";
   if (typeof value === "string") return value;
   if (typeof value === "number") {
-    if (["nip", "no_hp"].includes(key)) {
+    if (["unique_id", "nip", "no_hp"].includes(key)) {
       if (
         !Number.isSafeInteger(value) ||
         value < 0 ||
         String(value).length > 15
       )
         throw new Error(
-          "Store NIP and phone numbers as Excel Text cells to preserve every digit.",
+          "Store unique IDs, NIP and phone numbers as Excel Text cells to preserve every digit.",
         );
       return /^0+$/.test(cell.numFmt || "")
         ? String(value).padStart(cell.numFmt.length, "0")

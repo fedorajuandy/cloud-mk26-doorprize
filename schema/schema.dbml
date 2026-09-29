@@ -74,6 +74,7 @@ Table "role_permissions" {
 
 Table "participants" {
   "id" bigint [pk, increment]
+  "unique_id" varchar(255) [unique, not null]
   "full_name" varchar(255) [not null]
   "no_hp" varchar(20) [default: null]
   "email" varchar(255) [default: null]

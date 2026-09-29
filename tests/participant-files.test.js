@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { parse as parseCsv } from "csv-parse/sync";
 import { before, after, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import ExcelJS from "exceljs";
@@ -20,6 +22,7 @@ const headers = [
   "sesi",
   "email",
   "profile_picture",
+  "unique_id",
 ];
 before(async () => {
   fixture = await testDatabase();
@@ -50,6 +53,13 @@ beforeEach(async () => {
   await db("participants").delete();
 });
 function request(path, options = {}, auth = cookie) {
+  if (path === "/participants" && options.method === "POST" && options.body) {
+    const fixture = JSON.parse(options.body);
+    options = {
+      ...options,
+      body: JSON.stringify({ unique_id: randomUUID(), ...fixture }),
+    };
+  }
   return handleApi(
     new Request(`http://localhost/api${path}`, {
       ...options,
@@ -58,16 +68,47 @@ function request(path, options = {}, auth = cookie) {
     db,
   );
 }
-function upload(content, filename = "participants.csv", auth = cookie) {
+function rawUpload(content, filename = "participants.csv", auth = cookie) {
   const form = new FormData();
   form.append("file", new Blob([content]), filename);
   return request("/participants/import", { method: "POST", body: form }, auth);
+}
+// Supply required identifiers for older import fixtures; rawUpload tests missing IDs.
+function upload(content, filename = "participants.csv", auth = cookie) {
+  if (
+    filename.endsWith(".csv") &&
+    typeof content === "string" &&
+    content.length <= 5 * 1024 * 1024
+  ) {
+    try {
+      const records = parseCsv(content, { bom: true });
+      if (records.length && !records[0].includes("unique_id")) {
+        records[0].push("unique_id");
+        for (const row of records.slice(1)) row.push(randomUUID());
+        content = records
+          .map((row) =>
+            row
+              .map((value) => '"' + String(value).replaceAll('"', '""') + '"')
+              .join(","),
+          )
+          .join("\n");
+      }
+    } catch {
+      /* Malformed CSV fixtures must remain malformed. */
+    }
+  }
+  return rawUpload(content, filename, auth);
 }
 async function workbookBytes(rows, configure) {
   const book = new ExcelJS.Workbook(),
     sheet = book.addWorksheet("Participants");
   sheet.addRow(headers);
-  rows.forEach((row) => sheet.addRow(row));
+  rows.forEach((row) => {
+    const values = [...row];
+    while (values.length < 9) values.push(null);
+    values.push(randomUUID());
+    sheet.addRow(values);
+  });
   configure?.(sheet);
   return book.xlsx.writeBuffer();
 }
@@ -89,6 +130,7 @@ async function rows(path = "/participants?limit=100") {
 async function sample() {
   await db("participants").insert([
     {
+      unique_id: randomUUID(),
       full_name: "No prize",
       nip: "0001",
       unit_kerja: "Finance",
@@ -98,6 +140,7 @@ async function sample() {
       deleted_at: null,
     },
     {
+      unique_id: randomUUID(),
       full_name: "First laptop",
       nip: "0002",
       unit_kerja: "Finance",
@@ -107,6 +150,7 @@ async function sample() {
       deleted_at: null,
     },
     {
+      unique_id: randomUUID(),
       full_name: "Second laptop",
       nip: "0003",
       unit_kerja: "Operations",
@@ -116,6 +160,7 @@ async function sample() {
       deleted_at: null,
     },
     {
+      unique_id: randomUUID(),
       full_name: "Other prize",
       nip: "0004",
       unit_kerja: "Operations",
@@ -125,6 +170,7 @@ async function sample() {
       deleted_at: null,
     },
     {
+      unique_id: randomUUID(),
       full_name: "Archived",
       nip: "0005",
       unit_kerja: "Finance",
@@ -353,6 +399,7 @@ test("Excel export uses the same filters, supports all/page scopes and produces 
 });
 test("Excel export writes formula-looking participant text as text, not formulas", async () => {
   await db("participants").insert({
+    unique_id: randomUUID(),
     full_name: "=1+1",
     nip: "000123",
     unit_kerja: "@Finance",
@@ -428,7 +475,7 @@ test("batch updates reject invalid, missing, archived and unauthorized records a
     ],
     [{ id, babak: -1 }],
     [{ id, babak: "2" }],
-    [{ id, full_name: null }],
+    [{ id, unique_id: randomUUID(), full_name: null }],
     [{ id, deleted_at: null }],
     [{ id: 0, prize: "Changed" }],
     [
@@ -478,6 +525,14 @@ test("optional dummy seed appends 2800 eligible records and purge removes only p
     existing.map((row) => row.id),
   );
   assert.equal(dummy.length, 2800);
+  assert.equal(new Set(dummy.map((row) => row.unique_id)).size, 2800);
+  assert.ok(
+    dummy.every((row) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+        row.unique_id,
+      ),
+    ),
+  );
   assert.equal(new Set(dummy.map((row) => row.nip)).size, 2800);
   assert.ok(
     dummy.every(
@@ -577,6 +632,7 @@ test("sesi works across CRUD, batch, combined filters, import and Excel export",
       body: JSON.stringify(data),
     });
   const created = await write("/participants", "POST", {
+    unique_id: randomUUID(),
     full_name: "Session winner",
     nip: "S001",
     unit_kerja: "Finance",
@@ -695,9 +751,27 @@ test("reset results clears every result including archives while preserving part
 
 test("participant sorting is global, numeric, stable and shared with Excel export", async () => {
   await db("participants").insert([
-    { full_name: "Zulu", nip: "001", unit_kerja: "Finance", babak: 2 },
-    { full_name: "Alpha", nip: "002", unit_kerja: "Finance", babak: 10 },
-    { full_name: "Beta", nip: "003", unit_kerja: "Finance", babak: 1 },
+    {
+      unique_id: randomUUID(),
+      full_name: "Zulu",
+      nip: "001",
+      unit_kerja: "Finance",
+      babak: 2,
+    },
+    {
+      unique_id: randomUUID(),
+      full_name: "Alpha",
+      nip: "002",
+      unit_kerja: "Finance",
+      babak: 10,
+    },
+    {
+      unique_id: randomUUID(),
+      full_name: "Beta",
+      nip: "003",
+      unit_kerja: "Finance",
+      babak: 1,
+    },
   ]);
   assert.deepEqual(
     (
@@ -766,6 +840,7 @@ test("email and profile picture support CRUD, imports, exports and partial updat
       body: JSON.stringify(data),
     });
   const response = await write("/participants", "POST", {
+    unique_id: randomUUID(),
     full_name: "Contact",
     nip: "C001",
     unit_kerja: "Finance",
@@ -846,4 +921,77 @@ test("email and profile picture support CRUD, imports, exports and partial updat
   );
   assert.equal(bad.status, 422);
   assert.equal((await rows()).pagination.total, 3);
+});
+
+test("unique_id is required, imported as text, unique across archives and preserved by partial updates", async () => {
+  const create = (data) =>
+    handleApi(
+      new Request("http://localhost/api/participants", {
+        method: "POST",
+        headers: { cookie, "content-type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+      db,
+    );
+  const input = {
+    full_name: "External ID",
+    nip: "0001",
+    unit_kerja: "Finance",
+  };
+  for (const unique_id of [undefined, null, "", "x".repeat(256)])
+    assert.equal((await create({ ...input, unique_id })).status, 422);
+  assert.equal(
+    (await rawUpload("full_name,nip,unit_kerja\nMissing,001,Finance")).status,
+    422,
+  );
+  const csv =
+    "unique_id,full_name,nip,unit_kerja\n000001234567890123456,Imported,001,Finance";
+  assert.equal((await rawUpload(csv)).status, 201);
+  const imported = (await rows()).records[0];
+  assert.equal(imported.unique_id, "000001234567890123456");
+  assert.equal(
+    (await batchUpdate([{ id: imported.id, prize: "Laptop" }])).status,
+    200,
+  );
+  assert.equal(
+    (await db("participants").where({ id: imported.id }).first()).unique_id,
+    imported.unique_id,
+  );
+  assert.equal((await rawUpload(csv)).status, 409);
+  assert.equal(
+    (
+      await rawUpload(
+        "unique_id,full_name,nip,unit_kerja\nnew-one,New,002,Finance\n000001234567890123456,Duplicate,003,Finance",
+      )
+    ).status,
+    409,
+  );
+  assert.equal((await rows()).pagination.total, 1);
+  assert.equal(
+    (
+      await rawUpload(
+        "unique_id,full_name,nip,unit_kerja\nsame,One,002,Finance\nsame,Two,003,Finance",
+      )
+    ).status,
+    409,
+  );
+  assert.equal((await rows()).pagination.total, 1);
+  const book = new ExcelJS.Workbook(),
+    sheet = book.addWorksheet("Participants");
+  sheet.addRow(["unique_id", "full_name", "nip", "unit_kerja"]);
+  sheet.addRow(["000009876543210987654", "Excel ID", "002", "Finance"]);
+  assert.equal(
+    (await rawUpload(await book.xlsx.writeBuffer(), "ids.xlsx")).status,
+    201,
+  );
+  const exported = await readWorkbook(
+    await request("/participants/export?sort_by=unique_id&sort_order=asc"),
+  );
+  assert.equal(exported.getCell("J1").value, "unique_id");
+  assert.equal(exported.getCell("J2").value, imported.unique_id);
+  await request(`/participants/${imported.id}`, { method: "DELETE" });
+  assert.equal(
+    (await create({ ...input, unique_id: imported.unique_id })).status,
+    409,
+  );
 });

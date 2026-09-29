@@ -50,6 +50,7 @@ export function participantQuery(db, filters) {
   if (filters.search)
     query.where((group) => {
       for (const column of [
+        "unique_id",
         "full_name",
         "nip",
         "unit_kerja",

@@ -75,7 +75,7 @@ Send JSON with `Content-Type: application/json`. Upload files as multipart, and 
 | `updated_at` | Timestamp/null | Server-managed                                                      |
 | `deleted_at` | Timestamp/null | Archive timestamp                                                   |
 
-Blank optional strings become null. NIP is **not unique** in the supplied schema. Sending the same participant twice creates two records. The API does not silently merge, deduplicate, or overwrite by NIP.
+Blank optional strings become null. NIP is **not unique** in the supplied schema. Different unique IDs can share a NIP; reusing a unique ID is rejected. The API does not silently merge, deduplicate, or overwrite by NIP.
 
 ## List participants: pagination and filters
 
@@ -157,7 +157,7 @@ Example response:
 ```sh
 curl --fail-with-body -b "$COOKIE_JAR" \
   -H 'Content-Type: application/json' \
-  -d '{"full_name":"Ayu Pratama","nip":"000123","unit_kerja":"Finance","no_hp":"08123456789","prize":null,"babak":null}' \
+  -d '{"unique_id":"participant-001","full_name":"Ayu Pratama","nip":"000123","unit_kerja":"Finance","no_hp":"08123456789","prize":null,"babak":null}' \
   "$BASE_URL/api/participants"
 
 curl --fail-with-body -b "$COOKIE_JAR" -X PATCH \
@@ -187,7 +187,7 @@ curl --fail-with-body -b "$COOKIE_JAR" -X PATCH \
 - Omitted fields remain unchanged. For example, supplying only `babak` preserves the existing prize and personal details.
 - Explicit `null` clears `prize`, `babak`, `sesi`, or `no_hp`; `babak: 0` sets round zero. Blank prize/phone strings also become null, matching individual updates.
 - Other editable participant fields (`full_name`, `nip`, `unit_kerja`, `no_hp`) are optional and use the same validation as individual updates. Required text fields cannot be cleared.
-- IDs and timestamps cannot be changed. `updated_at` is set automatically for each targeted record. Unknown fields, duplicate IDs, empty updates, and invalid values return `422`.
+- Numeric IDs and timestamps cannot be changed. `updated_at` is set automatically for each targeted record. Unknown fields, duplicate IDs, empty updates, and invalid values return `422`.
 - Every ID must identify an active participant. A missing or archived participant returns `404`.
 - The entire batch is atomic: any validation or database failure leaves all participants unchanged. No records are inserted. Success counts targeted records, including assignments that already had the requested value.
 - Use separate requests for more than 100 participants; atomicity applies to each request independently.
@@ -205,7 +205,7 @@ curl --fail-with-body -b "$COOKIE_JAR" \
   "$BASE_URL/api/participants/import-template" -o participants-template.xlsx
 ```
 
-Required headers: `full_name`, `nip`, `unit_kerja`.
+Required headers: `unique_id`, `full_name`, `nip`, `unit_kerja`.
 
 Optional headers: `no_hp`, `prize`, `babak`, `sesi`, `email`, `profile_picture`.
 
@@ -214,12 +214,12 @@ Headers are case-insensitive and spaces/hyphens normalize to underscores, so `Fu
 Example CSV:
 
 ```csv
-full_name,nip,unit_kerja,no_hp,prize,babak
-Ayu Pratama,000123456789012345,Finance,08123456789,,
-"Budi, Santoso",000456,Operations,08129876543,Laptop,2
+full_name,nip,unit_kerja,no_hp,prize,babak,unique_id
+Ayu Pratama,000123456789012345,Finance,08123456789,,,participant-001
+"Budi, Santoso",000456,Operations,08129876543,Laptop,2,participant-002
 ```
 
-Store NIP and phone numbers as **text** in Excel. Numeric identifiers longer than 15 digits are rejected because Excel may already have lost precision. Simple zero-padding number formats are recognized, but text is preferred. Blank optional cells become null. Formulas, dates, booleans, and error cells are not accepted as participant values; paste values as text/numbers first. CSV text is preserved literally and is never evaluated as a formula. Quotes, commas inside quoted fields, and multiline quoted CSV fields are supported. CSV validation row numbers refer to parsed records including the header; XLSX row numbers refer to worksheet rows.
+Store unique IDs, NIP and phone numbers as **text** in Excel. Numeric identifiers longer than 15 digits are rejected because Excel may already have lost precision. Simple zero-padding number formats are recognized, but text is preferred. Blank optional cells become null. Formulas, dates, booleans, and error cells are not accepted as participant values; paste values as text/numbers first. CSV text is preserved literally and is never evaluated as a formula. Quotes, commas inside quoted fields, and multiline quoted CSV fields are supported. CSV validation row numbers refer to parsed records including the header; XLSX row numbers refer to worksheet rows.
 
 ```sh
 curl --fail-with-body -b "$COOKIE_JAR" \
@@ -235,7 +235,7 @@ Success (`201`):
 { "data": { "imported": 250, "mode": "append" } }
 ```
 
-Imports are **append-only and transactional**. Existing records are unchanged. All rows are validated before any insert; any invalid row means nothing is imported. Uploading the same file again will append duplicates. Newly imported records are active and get new IDs/timestamps. There is no upsert or overwrite mode.
+Imports are **append-only and transactional**. Existing records are unchanged. All rows are validated before any insert; any invalid row means nothing is imported. Uploading the same unique IDs again returns `409` and imports nothing. Newly imported records are active and get new IDs/timestamps. There is no upsert or overwrite mode.
 
 Row validation failure (`422`):
 
@@ -298,7 +298,7 @@ Content-Disposition: attachment; filename="participants.xlsx"
 Cache-Control: no-store
 ```
 
-The workbook contains the six participant input fields in the same order as the import template. IDs and audit timestamps are omitted. NIP/phone values are exported as Excel text, blank prizes remain blank, and strings beginning with `=` are written as text rather than executable formulas. The header is frozen, columns have readable widths, and Excel filtering is enabled. Exported files can be imported again, subject to the import limits; doing so appends new records.
+The workbook contains the ten participant input fields in the same order as the import template. Numeric database IDs and audit timestamps are omitted; `unique_id` is included. NIP/phone values are exported as Excel text, blank prizes remain blank, and strings beginning with `=` are written as text rather than executable formulas. The header is frozen, columns have readable widths, and Excel filtering is enabled. Exported files can be imported again, subject to the import limits; this requires unique IDs not already present in the target database.
 
 ## Admin/system endpoints
 
@@ -388,7 +388,7 @@ Returns `200` with `{"data":{"updated":2800}}`, counting rows whose results chan
 
 ## Sorting lists and exports
 
-List routes support `sort_by` and `sort_order=asc|desc` (defaults: `id`, `desc`). Participant sort fields: `id`, `full_name`, `nip`, `unit_kerja`, `no_hp`, `email`, `profile_picture`, `prize`, `sesi`, `babak`, `created_at`, `updated_at`. Other lists allow `id` plus `username`/`role_id` for users, `role_name` for roles, or `permission_name` for permissions. User `role_id` sorts by the displayed role name. Unsupported fields or directions return `422`.
+List routes support `sort_by` and `sort_order=asc|desc` (defaults: `id`, `desc`). Participant sort fields: `id`, `unique_id`, `full_name`, `nip`, `unit_kerja`, `no_hp`, `email`, `profile_picture`, `prize`, `sesi`, `babak`, `created_at`, `updated_at`. Other lists allow `id` plus `username`/`role_id` for users, `role_name` for roles, or `permission_name` for permissions. User `role_id` sorts by the displayed role name. Unsupported fields or directions return `422`.
 
 Sorting happens before pagination. Ties use descending ID for stable page boundaries. Numeric fields sort numerically; NIP and phone remain text. Nulls follow database ordering (first ascending, last descending on supported MySQL/SQLite). Participant exports accept the same sort parameters, including current-page exports. Example: `/api/participants?sesi=1&sort_by=full_name&sort_order=asc&page=1&limit=100`.
 
@@ -414,3 +414,11 @@ CSV/XLSX imports accept optional `email` and `profile_picture` headers. Template
   ]
 }
 ```
+
+## Required participant unique IDs
+
+`unique_id` is required on creation and CSV/XLSX import: a nonblank string up to 255 characters. Surrounding whitespace is trimmed; leading zeros are preserved. Imported IDs need not be UUIDs. Format Excel identifiers as Text to avoid numeric precision loss. The database enforces uniqueness, including archived participants; comparisons follow the database collation. Duplicate IDs within a file or already in the database return `409` and roll back the entire import. Imports append, never upsert by unique ID.
+
+The admin form requires Unique ID. APIs return it, search includes it, and `sort_by=unique_id` is supported. It may be changed through PUT/PATCH or batch updates, subject to uniqueness; omitting it preserves the value, and null/blank is rejected. Existing numeric `id` remains the route and batch identifier. Resetting results preserves unique IDs.
+
+Templates/exports append `unique_id` as text in column J. Spreadsheet imports require a `unique_id` header; old files must add this column. The migration backfills missing IDs on existing participants with random UUID v4 values before adding the NOT NULL constraint and unique index. Dummy seeding generates a fresh random UUID v4 for each participant.

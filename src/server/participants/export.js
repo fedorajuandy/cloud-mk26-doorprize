@@ -31,7 +31,7 @@ export async function exportParticipants({ db, user, url, method }) {
     const row = sheet.addRow(record);
     row.alignment = { vertical: "top", wrapText: true };
   }
-  sheet.autoFilter = `A1:I${Math.max(1, sheet.rowCount)}`;
+  sheet.autoFilter = `A1:J${Math.max(1, sheet.rowCount)}`;
   return workbookResponse(
     await workbook.xlsx.writeBuffer(),
     "participants.xlsx",

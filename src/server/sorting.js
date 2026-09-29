@@ -2,6 +2,7 @@ import { z } from "zod";
 const columns = {
   participants: [
     "id",
+    "unique_id",
     "full_name",
     "nip",
     "unit_kerja",

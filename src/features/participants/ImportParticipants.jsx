@@ -50,10 +50,10 @@ export default function ImportParticipants(props) {
           imports use the first worksheet.
         </p>
         <p class="muted">
-          Required columns: <code>full_name</code>, <code>nip</code>,{" "}
-          <code>unit_kerja</code>. Optional: <code>no_hp</code>,{" "}
-          <code>prize</code>, <code>babak</code>, <code>sesi</code>,{" "}
-          <code>email</code>, <code>profile_picture</code>.
+          Required columns: <code>unique_id</code>, <code>full_name</code>,{" "}
+          <code>nip</code>, <code>unit_kerja</code>. Optional:{" "}
+          <code>no_hp</code>, <code>prize</code>, <code>babak</code>,{" "}
+          <code>sesi</code>, <code>email</code>, <code>profile_picture</code>.
         </p>
         <button
           type="button"
@@ -78,9 +78,9 @@ export default function ImportParticipants(props) {
           />
         </label>
         <p class="muted">
-          Up to 5 MB and 5,000 rows. Store NIP and phone numbers as text to
-          preserve leading zeros. Import adds new records; uploading the same
-          file again adds duplicates.
+          Up to 5 MB and 5,000 rows. Store unique IDs, NIP and phone numbers as
+          text to preserve leading zeros. Import adds new records; reusing a
+          unique ID rejects the whole import.
         </p>
         <Show when={error()}>
           <p class="error" role="alert">

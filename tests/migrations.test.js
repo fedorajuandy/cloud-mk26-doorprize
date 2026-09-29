@@ -35,7 +35,7 @@ test("adopts existing admin tables without replaying unrelated migration history
     });
     const history = await db("knex_migrations");
     const [, applied] = await db.migrate.latest();
-    assert.equal(applied.length, 5);
+    assert.equal(applied.length, 6);
     assert.ok(await db.schema.hasTable("participants"));
     assert.deepEqual(await db("users").first(), before);
     assert.deepEqual(
@@ -48,6 +48,7 @@ test("adopts existing admin tables without replaying unrelated migration history
     );
     assert.deepEqual(await db("knex_migrations"), history);
     await db("participants").insert({
+      unique_id: "preserve-id",
       full_name: "Preserve",
       nip: "0001",
       unit_kerja: "Finance",
@@ -164,6 +165,50 @@ test("contact migration preserves old data, defaults to null and is safe to reru
     assert.equal(
       (await db("participants").first()).email,
       "existing@example.com",
+    );
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("unique ID migration backfills UUIDs, preserves records and enforces uniqueness", async () => {
+  const fixture = await testDatabase(),
+    { db } = fixture;
+  try {
+    await up(db);
+    await db("participants").insert({
+      full_name: "Legacy",
+      nip: "001",
+      unit_kerja: "Finance",
+    });
+    const before = await db("participants").first();
+    const { up: addUniqueId } =
+      await import("../migrations/006_participant_unique_id.js");
+    await addUniqueId(db);
+    const after = await db("participants").first();
+    assert.match(
+      after.unique_id,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    const { unique_id, ...rest } = after;
+    assert.deepEqual(rest, before);
+    await addUniqueId(db);
+    assert.equal((await db("participants").first()).unique_id, unique_id);
+    await assert.rejects(() =>
+      db("participants").insert({
+        full_name: "Duplicate",
+        nip: "002",
+        unit_kerja: "Finance",
+        unique_id,
+      }),
+    );
+    await assert.rejects(() =>
+      db("participants").insert({
+        full_name: "Null",
+        nip: "003",
+        unit_kerja: "Finance",
+        unique_id: null,
+      }),
     );
   } finally {
     await fixture.close();

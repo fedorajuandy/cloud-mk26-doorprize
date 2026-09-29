@@ -4,6 +4,7 @@ const nullable = (max) =>
   z.union([z.string().trim().max(max), z.null()]).transform((v) => v || null);
 export const participant = z
   .object({
+    unique_id: text(255),
     full_name: text(255),
     no_hp: nullable(20).optional(),
     email: nullable(255)

@@ -101,6 +101,7 @@ test("participant lifecycle, validation, filters, pagination and archive", async
     422,
   );
   const data = {
+    unique_id: "api-test-unique",
     full_name: "Ayu Test",
     nip: "000123",
     unit_kerja: "Finance",

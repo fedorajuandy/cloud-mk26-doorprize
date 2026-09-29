@@ -13,6 +13,9 @@ test("admin signs in, manages participants, roles, accounts, permissions, and br
     page.getByRole("heading", { name: "Participants", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Add participant" }).click();
+  await page
+    .getByLabel("Unique ID", { exact: false })
+    .fill("browser-admin-participant");
   await page.getByLabel("Full name").fill("Ayu Browser");
   await page.getByLabel("NIP", { exact: false }).fill("0012345");
   await page.getByLabel("Unit kerja").fill("Finance");

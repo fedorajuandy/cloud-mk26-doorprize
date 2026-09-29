@@ -38,19 +38,21 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await page.getByLabel("Participant file").setInputFiles({
     name: "invalid.csv",
     mimeType: "text/csv",
-    buffer: Buffer.from("full_name,nip,unit_kerja\nInvalid,,Finance"),
+    buffer: Buffer.from(
+      "unique_id,full_name,nip,unit_kerja\nbad-id,Invalid,,Finance",
+    ),
   });
   await page.getByRole("button", { name: "Import file", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Nothing was imported");
   await expect(page.getByText(/Row 2 · nip/)).toBeVisible();
   const data = [
-    "full_name,nip,unit_kerja,no_hp,prize,babak,sesi",
-    "Import Alpha,000001,Finance,081234,,1,1",
-    "Import Beta,000002,Finance,081235,Laptop,2,2",
-    "Import Gamma,000003,Operations,081236,Laptop,1,1",
+    "full_name,nip,unit_kerja,no_hp,prize,babak,sesi,unique_id",
+    "Import Alpha,000001,Finance,081234,,1,1,import-alpha",
+    "Import Beta,000002,Finance,081235,Laptop,2,2,import-beta",
+    "Import Gamma,000003,Operations,081236,Laptop,1,1,import-gamma",
     ...Array.from(
       { length: 10 },
-      (_, i) => `Import Other ${i},0001${i},Operations,,,3,1`,
+      (_, i) => `Import Other ${i},0001${i},Operations,,,3,1,import-other-${i}`,
     ),
   ];
   await page.getByLabel("Participant file").setInputFiles({
@@ -109,8 +111,22 @@ test("participant file import, shared filters, Excel export and theme indicator"
     .click();
   const book = new ExcelJS.Workbook(),
     sheet = book.addWorksheet("Participants");
-  sheet.addRow(["full_name", "nip", "unit_kerja", "prize", "babak"]);
-  sheet.addRow(["Import Excel", "000000123456789012", "Finance", "Tablet", 4]);
+  sheet.addRow([
+    "full_name",
+    "nip",
+    "unit_kerja",
+    "prize",
+    "babak",
+    "unique_id",
+  ]);
+  sheet.addRow([
+    "Import Excel",
+    "000000123456789012",
+    "Finance",
+    "Tablet",
+    4,
+    "import-excel",
+  ]);
   await page.getByLabel("Participant file").setInputFiles({
     name: "participants.xlsx",
     mimeType:
@@ -125,11 +141,9 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await expect(
     page.getByRole("cell", { name: "000000123456789012" }),
   ).toBeVisible();
-  const contactRow = page
-    .getByRole("row")
-    .filter({
-      has: page.getByRole("cell", { name: "Import Excel", exact: true }),
-    });
+  const contactRow = page.getByRole("row").filter({
+    has: page.getByRole("cell", { name: "Import Excel", exact: true }),
+  });
   await contactRow.getByRole("button", { name: "Edit", exact: true }).click();
   const editDialog = page.getByRole("dialog");
   await editDialog

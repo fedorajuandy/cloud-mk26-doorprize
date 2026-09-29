@@ -157,7 +157,7 @@ Framework reference: [SolidStart 2 configuration](https://docs.solidjs.com/solid
 
 ## Optional dummy participants and cleanup
 
-Super Admins can select **Participants → Add dummy participants → Add 2,800 dummy participants**. The table refreshes and clears filters after success. Alternatively, after migration, explicitly run `npm run db:seed:dummy` to append **2,800** dummy participants. They are labeled `Dummy Participant 0001` through `2800`, have run-specific `DUMMY-…` NIPs, and start with null prize, sesi, babak, and phone. Inserts are batched in one transaction. This is never run by `db:seed`, migrations, or application startup. Running it again adds another 2,800 records.
+Super Admins can select **Participants → Add dummy participants → Add 2,800 dummy participants**. The table refreshes and clears filters after success. Alternatively, after migration, explicitly run `npm run db:seed:dummy` to append **2,800** dummy participants. They are labeled `Participant 0001` through `2800`, have run-specific NIPs, and start with null prize, sesi, babak, and phone. Inserts are batched in one transaction. This is never run by `db:seed`, migrations, or application startup. Running it again adds another 2,800 records.
 
 Super Admins can use **Participants → Delete all participants** and type `DELETE ALL PARTICIPANTS` to permanently remove **all** participants, including archived records, real entries, and winners, regardless of current filters. Admin accounts, roles, permissions, settings, and migration history remain intact. Participant IDs are not reset.
 
@@ -174,3 +174,5 @@ Session support: run `npm run db:migrate` to add nullable `participants.sesi`. A
 To keep participants but clear the draw results, Super Admins can use **Participants → Reset all results** and type `RESET ALL RESULTS`. This resets prize, babak, and sesi to null for all active and archived participants without deleting anyone. Filters do not restrict the reset; participant details and archive status are preserved.
 
 Run `npm run db:migrate` for nullable participant `email` and `profile_picture` fields. Both support CRUD/batch updates, admin editing, sorting, CSV/XLSX import/export, and null defaults. Email is searchable; profile pictures use image URLs or local paths and render as thumbnails. No additional indexes are introduced for these optional display/contact fields.
+
+`unique_id` is now required and unique for participant creation/imports. Run `npm run db:migrate` to backfill existing participants with UUIDs and add the unique constraint. Import spreadsheets must include a `unique_id` column; exports append it as column J. Dummy participants get random UUID v4 IDs. Numeric `id` remains the API route/batch identifier.

@@ -11,6 +11,7 @@ export const participantColumns = [
   { header: "sesi", key: "sesi", width: 12 },
   { header: "email", key: "email", width: 32 },
   { header: "profile_picture", key: "profile_picture", width: 45 },
+  { header: "unique_id", key: "unique_id", width: 40 },
 ];
 export function createParticipantWorkbook() {
   const workbook = new ExcelJS.Workbook();
@@ -27,6 +28,7 @@ export function createParticipantWorkbook() {
     "prize",
     "email",
     "profile_picture",
+    "unique_id",
   ])
     sheet.getColumn(key).numFmt = "@";
   const header = sheet.getRow(1);
@@ -38,7 +40,7 @@ export function createParticipantWorkbook() {
     fgColor: { argb: "FF2866D5" },
   };
   header.alignment = { vertical: "middle" };
-  sheet.autoFilter = "A1:I1";
+  sheet.autoFilter = "A1:J1";
   return { workbook, sheet };
 }
 export function workbookResponse(buffer, filename) {
