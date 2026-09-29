@@ -194,5 +194,19 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await expect(
     page.getByRole("cell", { name: "Participant 2800", exact: true }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByText("2800 records · Page 2 of 280")).toBeVisible();
+  const nameHeader = page.getByRole("columnheader", { name: /Full name/ });
+  await nameHeader.getByRole("button").click();
+  await expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
+  await expect(page.getByText("2800 records · Page 1 of 280")).toBeVisible();
+  await expect(page.locator("tbody tr").first()).toContainText(
+    "Participant 0001",
+  );
+  await nameHeader.getByRole("button").click();
+  await expect(nameHeader).toHaveAttribute("aria-sort", "descending");
+  await expect(page.locator("tbody tr").first()).toContainText(
+    "Participant 2800",
+  );
   expect(errors).toEqual([]);
 });

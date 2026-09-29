@@ -690,3 +690,68 @@ test("reset results clears every result including archives while preserving part
     0,
   );
 });
+
+test("participant sorting is global, numeric, stable and shared with Excel export", async () => {
+  await db("participants").insert([
+    { full_name: "Zulu", nip: "001", unit_kerja: "Finance", babak: 2 },
+    { full_name: "Alpha", nip: "002", unit_kerja: "Finance", babak: 10 },
+    { full_name: "Beta", nip: "003", unit_kerja: "Finance", babak: 1 },
+  ]);
+  assert.deepEqual(
+    (
+      await rows("/participants?sort_by=full_name&sort_order=asc&limit=2")
+    ).records.map((r) => r.full_name),
+    ["Alpha", "Beta"],
+  );
+  assert.equal(
+    (
+      await rows(
+        "/participants?sort_by=full_name&sort_order=asc&limit=2&page=2",
+      )
+    ).records[0].full_name,
+    "Zulu",
+  );
+  assert.deepEqual(
+    (await rows("/participants?sort_by=babak&sort_order=asc")).records.map(
+      (r) => r.babak,
+    ),
+    [1, 2, 10],
+  );
+  assert.deepEqual(
+    (await rows("/participants?sort_by=babak&sort_order=desc")).records.map(
+      (r) => r.babak,
+    ),
+    [10, 2, 1],
+  );
+  const tied = (
+    await rows("/participants?sort_by=unit_kerja&sort_order=asc")
+  ).records.map((r) => Number(r.id));
+  assert.deepEqual(
+    tied,
+    [...tied].sort((a, b) => b - a),
+  );
+  const sheet = await readWorkbook(
+    await request(
+      "/participants/export?sort_by=full_name&sort_order=asc&scope=page&limit=2&page=2",
+    ),
+  );
+  assert.equal(sheet.getCell("A2").value, "Zulu");
+  for (const query of [
+    "sort_by=password",
+    "sort_by=id%20DESC",
+    "sort_order=invalid",
+  ])
+    assert.equal((await request(`/participants?${query}`)).status, 422);
+  for (const [resource, column] of [
+    ["users", "username"],
+    ["users", "role_id"],
+    ["roles", "role_name"],
+    ["permissions", "permission_name"],
+  ]) {
+    assert.equal(
+      (await request(`/${resource}?sort_by=${column}&sort_order=asc`)).status,
+      200,
+    );
+    assert.equal((await request(`/${resource}?sort_by=password`)).status, 422);
+  }
+});

@@ -1,3 +1,4 @@
+import { sortOptions, applySort } from "../sorting.js";
 import { z } from "zod";
 import { fail } from "../errors.js";
 const integer = (max) =>
@@ -39,7 +40,7 @@ export function participantFilters(params) {
     filters.start_date > filters.end_date
   )
     fail(422, "start_date must not be after end_date.");
-  return filters;
+  return { ...filters, ...sortOptions(params, "participants") };
 }
 export function participantQuery(db, filters) {
   const query = db("participants");
@@ -73,9 +74,7 @@ export async function listParticipants(db, params) {
   const query = participantQuery(db, filters);
   const [count, records] = await Promise.all([
     query.clone().count({ count: "*" }).first(),
-    query
-      .clone()
-      .orderBy("id", "desc")
+    applySort(query.clone(), filters)
       .limit(filters.limit)
       .offset((filters.page - 1) * filters.limit),
   ]);

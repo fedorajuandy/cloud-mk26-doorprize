@@ -385,3 +385,11 @@ CSV/XLSX imports accept optional `sesi` (alias `session`), with blank cells trea
 `POST /api/participants/reset-results` requires a Super Admin session. Send `{"confirmation":"RESET ALL RESULTS"}`. One atomic update sets `prize`, `babak`, and `sesi` to null for **all participants, including archived records**, regardless of filters. Participant details and archive status remain unchanged; changed rows receive a new `updated_at`. Active participants become eligible for draws again.
 
 Returns `200` with `{"data":{"updated":2800}}`, counting rows whose results changed. Repeating the reset returns zero if all three fields are already null. Incorrect confirmation returns `422`; non-Super Admins receive `403`. The admin action is **Participants → Reset all results** and requires typing `RESET ALL RESULTS` before confirming.
+
+## Sorting lists and exports
+
+List routes support `sort_by` and `sort_order=asc|desc` (defaults: `id`, `desc`). Participant sort fields: `id`, `full_name`, `nip`, `unit_kerja`, `no_hp`, `prize`, `sesi`, `babak`, `created_at`, `updated_at`. Other lists allow `id` plus `username`/`role_id` for users, `role_name` for roles, or `permission_name` for permissions. User `role_id` sorts by the displayed role name. Unsupported fields or directions return `422`.
+
+Sorting happens before pagination. Ties use descending ID for stable page boundaries. Numeric fields sort numerically; NIP and phone remain text. Nulls follow database ordering (first ascending, last descending on supported MySQL/SQLite). Participant exports accept the same sort parameters, including current-page exports. Example: `/api/participants?sesi=1&sort_by=full_name&sort_order=asc&page=1&limit=100`.
+
+Admin table data-column headers toggle ascending/descending order and return to page 1. Arrows and accessible sort state indicate the current direction. The Actions column is not sortable.

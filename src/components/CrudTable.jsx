@@ -6,6 +6,13 @@ import DeleteAllParticipants from "../features/participants/DeleteAllParticipant
 import SeedParticipants from "../features/participants/SeedParticipants.jsx";
 import ResetParticipantResults from "../features/participants/ResetParticipantResults.jsx";
 export default function CrudTable(props) {
+  const [sortBy, setSortBy] = createSignal("id");
+  const [sortOrder, setSortOrder] = createSignal("desc");
+  function toggleSort(key) {
+    setSortOrder(sortBy() === key && sortOrder() === "asc" ? "desc" : "asc");
+    setSortBy(key);
+    setPage(1);
+  }
   const [resettingResults, setResettingResults] = createSignal(false);
   const [seeding, setSeeding] = createSignal(false);
   const [purging, setPurging] = createSignal(false);
@@ -34,6 +41,8 @@ export default function CrudTable(props) {
     [formError, setFormError] = createSignal("");
   function filters() {
     const params = new URLSearchParams({
+      sort_by: sortBy(),
+      sort_order: sortOrder(),
       page: String(page()),
       limit: String(limit()),
       search: search(),
@@ -74,6 +83,8 @@ export default function CrudTable(props) {
     }
   }
   createEffect(() => {
+    sortBy();
+    sortOrder();
     search();
     page();
     deleted();
@@ -445,7 +456,36 @@ export default function CrudTable(props) {
           <table>
             <thead>
               <tr>
-                <For each={props.columns}>{(key) => <th>{label(key)}</th>}</For>
+                <For each={props.columns}>
+                  {(key) => (
+                    <th
+                      scope="col"
+                      aria-sort={
+                        sortBy() === key
+                          ? sortOrder() === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
+                    >
+                      <button
+                        type="button"
+                        class="sort-header"
+                        onClick={() => toggleSort(key)}
+                        title={`Sort ${label(key)} ${sortBy() === key && sortOrder() === "asc" ? "descending" : "ascending"}`}
+                      >
+                        {label(key)}{" "}
+                        <span aria-hidden="true">
+                          {sortBy() === key
+                            ? sortOrder() === "asc"
+                              ? "↑"
+                              : "↓"
+                            : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                  )}
+                </For>
                 <th class="actions">Actions</th>
               </tr>
             </thead>

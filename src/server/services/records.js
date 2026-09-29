@@ -1,3 +1,4 @@
+import { sortOptions, applySort } from "../sorting.js";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { authorize } from "../auth.js";
@@ -71,6 +72,7 @@ export async function handleRecords({
       .string()
       .max(255)
       .parse(url.searchParams.get("search") || "");
+    const sorting = sortOptions(url.searchParams, table);
     const query = db(table);
     deleted ? query.whereNotNull("deleted_at") : query.whereNull("deleted_at");
     if (search) {
@@ -90,8 +92,7 @@ export async function handleRecords({
     }
     const [count, rows] = await Promise.all([
       query.clone().count({ count: "*" }).first(),
-      query
-        .clone()
+      applySort(query.clone(), sorting, db, table)
         .select(
           table === "users"
             ? [
@@ -107,7 +108,6 @@ export async function handleRecords({
               ]
             : ["*"],
         )
-        .orderBy("id", "desc")
         .limit(limit)
         .offset((page - 1) * limit),
     ]);
