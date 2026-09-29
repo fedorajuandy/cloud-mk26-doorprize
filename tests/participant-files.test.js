@@ -18,6 +18,8 @@ const headers = [
   "prize",
   "babak",
   "sesi",
+  "email",
+  "profile_picture",
 ];
 before(async () => {
   fixture = await testDatabase();
@@ -754,4 +756,94 @@ test("participant sorting is global, numeric, stable and shared with Excel expor
     );
     assert.equal((await request(`/${resource}?sort_by=password`)).status, 422);
   }
+});
+
+test("email and profile picture support CRUD, imports, exports and partial updates", async () => {
+  const write = (path, method, data) =>
+    request(path, {
+      method,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  const response = await write("/participants", "POST", {
+    full_name: "Contact",
+    nip: "C001",
+    unit_kerja: "Finance",
+    email: " person@example.com ",
+    profile_picture: "/mandiri.svg",
+  });
+  assert.equal(response.status, 201);
+  const participant = (await response.json()).data;
+  const id = participant.id;
+  assert.equal(participant.email, "person@example.com");
+  assert.equal(participant.profile_picture, "/mandiri.svg");
+  await batchUpdate([{ id, prize: "Laptop", babak: 1, sesi: 2 }]);
+  assert.equal(
+    (await db("participants").where({ id }).first()).email,
+    participant.email,
+  );
+  assert.equal(
+    (await rows("/participants?search=person%40example.com")).pagination.total,
+    1,
+  );
+  for (const input of [
+    { email: "invalid" },
+    { profile_picture: "javascript:alert(1)" },
+    { profile_picture: "//example.com/pic.png" },
+    { profile_picture: "data:image/png;base64,x" },
+  ])
+    assert.equal(
+      (await write(`/participants/${id}`, "PATCH", input)).status,
+      422,
+    );
+  assert.equal(
+    (await batchUpdate([{ id, email: "", profile_picture: null }])).status,
+    200,
+  );
+  const cleared = await db("participants").where({ id }).first();
+  assert.equal(cleared.email, null);
+  assert.equal(cleared.profile_picture, null);
+  assert.equal(
+    (
+      await upload(
+        "full_name,nip,unit_kerja,email,profile_picture\nCSV Contact,C002,Finance,csv@example.com,https://example.com/picture.png",
+      )
+    ).status,
+    201,
+  );
+  assert.equal(
+    (
+      await upload(
+        await workbookBytes([
+          [
+            "Excel Contact",
+            "C003",
+            "Finance",
+            null,
+            null,
+            null,
+            null,
+            "excel@example.com",
+            "/mandiri.svg",
+          ],
+        ]),
+        "contacts.xlsx",
+      )
+    ).status,
+    201,
+  );
+  const sheet = await readWorkbook(
+    await request(
+      "/participants/export?search=Contact&sort_by=email&sort_order=asc",
+    ),
+  );
+  assert.equal(sheet.getCell("H1").value, "email");
+  assert.equal(sheet.getCell("I1").value, "profile_picture");
+  assert.equal(sheet.getCell("H3").value, "csv@example.com");
+  assert.equal(sheet.getCell("I3").value, "https://example.com/picture.png");
+  const bad = await upload(
+    "full_name,nip,unit_kerja,email\nBad,C004,Finance,not-email",
+  );
+  assert.equal(bad.status, 422);
+  assert.equal((await rows()).pagination.total, 3);
 });

@@ -49,7 +49,14 @@ export function participantQuery(db, filters) {
     : query.whereNull("deleted_at");
   if (filters.search)
     query.where((group) => {
-      for (const column of ["full_name", "nip", "unit_kerja", "no_hp", "prize"])
+      for (const column of [
+        "full_name",
+        "nip",
+        "unit_kerja",
+        "no_hp",
+        "prize",
+        "email",
+      ])
         group.orWhere(column, "like", `%${filters.search}%`);
     });
   if (filters.without_prize) query.whereNull("prize");

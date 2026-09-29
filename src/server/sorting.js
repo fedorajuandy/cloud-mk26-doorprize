@@ -6,6 +6,8 @@ const columns = {
     "nip",
     "unit_kerja",
     "no_hp",
+    "email",
+    "profile_picture",
     "prize",
     "babak",
     "sesi",

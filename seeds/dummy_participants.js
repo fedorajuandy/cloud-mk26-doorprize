@@ -23,6 +23,8 @@ export async function seedDummyParticipants(db) {
             nip: `${run}-${String(number).padStart(4, "0")}`,
             unit_kerja: units[(number - 1) % units.length],
             no_hp: null,
+            email: null,
+            profile_picture: null,
             prize: null,
             babak: null,
             sesi: null,

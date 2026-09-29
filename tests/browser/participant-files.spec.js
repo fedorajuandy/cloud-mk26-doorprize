@@ -125,6 +125,26 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await expect(
     page.getByRole("cell", { name: "000000123456789012" }),
   ).toBeVisible();
+  const contactRow = page
+    .getByRole("row")
+    .filter({
+      has: page.getByRole("cell", { name: "Import Excel", exact: true }),
+    });
+  await contactRow.getByRole("button", { name: "Edit", exact: true }).click();
+  const editDialog = page.getByRole("dialog");
+  await editDialog
+    .getByLabel("Email", { exact: true })
+    .fill("contact@example.com");
+  await editDialog
+    .getByLabel("Profile picture URL", { exact: true })
+    .fill("/mandiri.svg");
+  await editDialog.getByRole("button", { name: /Save/ }).click();
+  await expect(
+    contactRow.getByRole("cell", { name: "contact@example.com", exact: true }),
+  ).toBeVisible();
+  await expect(
+    contactRow.getByRole("img", { name: "Participant profile" }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Reset all results", exact: true })
     .click();

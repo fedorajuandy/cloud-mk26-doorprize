@@ -6,6 +6,24 @@ export const participant = z
   .object({
     full_name: text(255),
     no_hp: nullable(20).optional(),
+    email: nullable(255)
+      .refine(
+        (value) => value === null || z.email().safeParse(value).success,
+        "Enter a valid email address.",
+      )
+      .optional(),
+    profile_picture: nullable(16000)
+      .refine((value) => {
+        if (value === null) return true;
+        if (/[\\\s]/.test(value)) return false;
+        if (/^\/(?!\/)/.test(value)) return true;
+        try {
+          return ["http:", "https:"].includes(new URL(value).protocol);
+        } catch {
+          return false;
+        }
+      }, "Use a local absolute image path or an HTTP(S) image URL.")
+      .optional(),
     unit_kerja: text(255),
     nip: text(255),
     prize: nullable(16000).optional(),

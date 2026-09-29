@@ -1,5 +1,6 @@
 import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { api, download } from "../lib/api.js";
+import ParticipantPicture from "./ParticipantPicture.jsx";
 import Modal from "./Modal.jsx";
 import ImportParticipants from "../features/participants/ImportParticipants.jsx";
 import DeleteAllParticipants from "../features/participants/DeleteAllParticipants.jsx";
@@ -524,7 +525,16 @@ export default function CrudTable(props) {
                               "name-cell": key === props.columns[0],
                             }}
                           >
-                            {value(row, key) ?? <span class="muted">—</span>}
+                            <Show
+                              when={
+                                props.participants && key === "profile_picture"
+                              }
+                              fallback={
+                                value(row, key) ?? <span class="muted">—</span>
+                              }
+                            >
+                              <ParticipantPicture src={row.profile_picture} />
+                            </Show>
                           </td>
                         )}
                       </For>

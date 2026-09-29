@@ -172,3 +172,5 @@ Neither cleanup nor dummy seeding is automatic. These commands act on the databa
 Session support: run `npm run db:migrate` to add nullable `participants.sesi`. Admin forms, filters, CRUD/batch APIs, CSV/XLSX imports, templates, and exports support it. New indexes `(deleted_at, sesi, id)` and `(deleted_at, sesi, babak, id)` support session-only and session/round filtering with ID pagination; the existing babak-only index remains.
 
 To keep participants but clear the draw results, Super Admins can use **Participants → Reset all results** and type `RESET ALL RESULTS`. This resets prize, babak, and sesi to null for all active and archived participants without deleting anyone. Filters do not restrict the reset; participant details and archive status are preserved.
+
+Run `npm run db:migrate` for nullable participant `email` and `profile_picture` fields. Both support CRUD/batch updates, admin editing, sorting, CSV/XLSX import/export, and null defaults. Email is searchable; profile pictures use image URLs or local paths and render as thumbnails. No additional indexes are introduced for these optional display/contact fields.

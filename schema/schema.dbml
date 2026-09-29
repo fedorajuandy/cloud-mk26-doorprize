@@ -76,11 +76,13 @@ Table "participants" {
   "id" bigint [pk, increment]
   "full_name" varchar(255) [not null]
   "no_hp" varchar(20) [default: null]
+  "email" varchar(255) [default: null]
   "unit_kerja" varchar(255) [not null]
   "nip" varchar(255) [not null]
   "prize" text [default: null]
   "sesi" uint(2) [default: null]
   "babak" uint(2) [default: null]
+  "profile_picture" text [default: null]
 
   "created_at" timestamp [not null, default: `now()`]
   "updated_at" timestamp [default: null]

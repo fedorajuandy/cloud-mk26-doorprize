@@ -35,7 +35,7 @@ test("adopts existing admin tables without replaying unrelated migration history
     });
     const history = await db("knex_migrations");
     const [, applied] = await db.migrate.latest();
-    assert.equal(applied.length, 4);
+    assert.equal(applied.length, 5);
     assert.ok(await db.schema.hasTable("participants"));
     assert.deepEqual(await db("users").first(), before);
     assert.deepEqual(
@@ -132,6 +132,39 @@ test("sesi migration preserves existing participants and creates session indexes
             .pluck("name");
     assert.ok(indexes.includes("idx_participants_status_session_id"));
     assert.ok(indexes.includes("idx_participants_status_session_round_id"));
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("contact migration preserves old data, defaults to null and is safe to rerun", async () => {
+  const fixture = await testDatabase(),
+    { db } = fixture;
+  try {
+    await up(db);
+    await db("participants").insert({
+      full_name: "Existing",
+      nip: "001",
+      unit_kerja: "Finance",
+    });
+    const before = await db("participants").first();
+    const { up: addContact } =
+      await import("../migrations/005_participant_contact.js");
+    await addContact(db);
+    assert.deepEqual(await db("participants").first(), {
+      ...before,
+      email: null,
+      profile_picture: null,
+    });
+    await db("participants").update({
+      email: "existing@example.com",
+      profile_picture: "/mandiri.svg",
+    });
+    await addContact(db);
+    assert.equal(
+      (await db("participants").first()).email,
+      "existing@example.com",
+    );
   } finally {
     await fixture.close();
   }

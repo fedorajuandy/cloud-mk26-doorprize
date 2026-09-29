@@ -15,6 +15,8 @@ const fields = [
   "prize",
   "babak",
   "sesi",
+  "email",
+  "profile_picture",
 ];
 const aliases = {
   full_name: "full_name",
@@ -30,6 +32,8 @@ const aliases = {
   round: "babak",
   sesi: "sesi",
   session: "sesi",
+  email: "email",
+  profile_picture: "profile_picture",
 };
 const metadata = new Set(["id", "created_at", "updated_at", "deleted_at"]);
 function headerName(value) {
@@ -246,6 +250,8 @@ export async function importParticipants({ db, user, request, method }) {
         prize: null,
         babak: null,
         sesi: null,
+        email: null,
+        profile_picture: null,
         ...result.data,
       });
   }

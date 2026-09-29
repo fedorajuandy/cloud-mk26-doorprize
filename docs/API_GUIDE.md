@@ -207,7 +207,7 @@ curl --fail-with-body -b "$COOKIE_JAR" \
 
 Required headers: `full_name`, `nip`, `unit_kerja`.
 
-Optional headers: `no_hp`, `prize`, `babak`, `sesi`.
+Optional headers: `no_hp`, `prize`, `babak`, `sesi`, `email`, `profile_picture`.
 
 Headers are case-insensitive and spaces/hyphens normalize to underscores, so `Full name`, `Unit kerja`, and `Phone number` work. Additional aliases: `nama`/`nama_lengkap` → `full_name`, `phone_number` → `no_hp`, `hadiah` → `prize`, `round` → `babak`, `session` → `sesi`. `id`, `created_at`, `updated_at`, and `deleted_at` columns are ignored if present. Other unknown or duplicate columns are rejected.
 
@@ -388,8 +388,29 @@ Returns `200` with `{"data":{"updated":2800}}`, counting rows whose results chan
 
 ## Sorting lists and exports
 
-List routes support `sort_by` and `sort_order=asc|desc` (defaults: `id`, `desc`). Participant sort fields: `id`, `full_name`, `nip`, `unit_kerja`, `no_hp`, `prize`, `sesi`, `babak`, `created_at`, `updated_at`. Other lists allow `id` plus `username`/`role_id` for users, `role_name` for roles, or `permission_name` for permissions. User `role_id` sorts by the displayed role name. Unsupported fields or directions return `422`.
+List routes support `sort_by` and `sort_order=asc|desc` (defaults: `id`, `desc`). Participant sort fields: `id`, `full_name`, `nip`, `unit_kerja`, `no_hp`, `email`, `profile_picture`, `prize`, `sesi`, `babak`, `created_at`, `updated_at`. Other lists allow `id` plus `username`/`role_id` for users, `role_name` for roles, or `permission_name` for permissions. User `role_id` sorts by the displayed role name. Unsupported fields or directions return `422`.
 
 Sorting happens before pagination. Ties use descending ID for stable page boundaries. Numeric fields sort numerically; NIP and phone remain text. Nulls follow database ordering (first ascending, last descending on supported MySQL/SQLite). Participant exports accept the same sort parameters, including current-page exports. Example: `/api/participants?sesi=1&sort_by=full_name&sort_order=asc&page=1&limit=100`.
 
 Admin table data-column headers toggle ascending/descending order and return to page 1. Arrows and accessible sort state indicate the current direction. The Actions column is not sortable.
+
+## Participant email and profile picture
+
+- `email`: optional valid email address, at most 255 characters; null or blank clears it. It is not unique. Participant search includes email.
+- `profile_picture`: optional image URL (HTTP/HTTPS) or local absolute path such as `/photos/participant.png`, at most 16,000 characters; null or blank clears it. Data URLs, protocol-relative URLs, and executable schemes are rejected. This field stores a reference, not an uploaded image or base64 content.
+
+Both fields are returned by participant APIs and supported in create, PUT/PATCH, and batch updates. Omitted values preserve existing data during updates; old records/imports and dummy records default to null. Resetting draw results preserves both fields. Admin forms allow editing them and the table shows a lazy-loaded picture thumbnail with an unavailable-image fallback. Sorting supports both fields (pictures sort by their stored path).
+
+CSV/XLSX imports accept optional `email` and `profile_picture` headers. Templates and exports append these as columns H and I, keeping the original seven columns intact. Exports contain picture URLs as text, not embedded images. Example:
+
+```json
+{
+  "updates": [
+    {
+      "id": 101,
+      "email": "person@example.com",
+      "profile_picture": "https://example.com/photos/101.png"
+    }
+  ]
+}
+```
