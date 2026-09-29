@@ -446,3 +446,109 @@ test("batch updates reject invalid, missing, archived and unauthorized records a
   assert.equal((await request("/participants/batch")).status, 405);
   assert.deepEqual(await db("participants").orderBy("id"), before);
 });
+
+test("optional dummy seed appends 2800 eligible records and purge removes only participants", async () => {
+  const { seedDummyParticipants } =
+    await import("../seeds/dummy_participants.js");
+  await sample();
+  const existing = await db("participants").orderBy("id");
+  const adminTables = [
+    "users",
+    "roles",
+    "permissions",
+    "role_permissions",
+    "system_settings",
+  ];
+  const before = await Promise.all(
+    adminTables.map((table) => db(table).select("*")),
+  );
+  assert.equal(await seedDummyParticipants(db), 2800);
+  const dummy = await db("participants").where("nip", "like", "DUMMY-%");
+  assert.equal(dummy.length, 2800);
+  assert.equal(new Set(dummy.map((row) => row.nip)).size, 2800);
+  assert.ok(
+    dummy.every(
+      (row) =>
+        row.prize === null && row.babak === null && row.deleted_at === null,
+    ),
+  );
+  assert.deepEqual(
+    await db("participants")
+      .whereIn(
+        "id",
+        existing.map((row) => row.id),
+      )
+      .orderBy("id"),
+    existing,
+  );
+  const purge = (confirmation, auth = cookie) =>
+    request(
+      "/participants/purge",
+      {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ confirmation }),
+      },
+      auth,
+    );
+  assert.equal((await purge("wrong")).status, 422);
+  assert.equal(
+    (await purge("DELETE ALL PARTICIPANTS", viewerCookie)).status,
+    403,
+  );
+  assert.equal((await purge("DELETE ALL PARTICIPANTS", "")).status, 401);
+  assert.equal((await request("/participants/purge")).status, 405);
+  assert.equal(
+    Number((await db("participants").count({ total: "*" }).first()).total),
+    2805,
+  );
+  const response = await purge("DELETE ALL PARTICIPANTS");
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.deleted, 2805);
+  assert.equal(
+    Number((await db("participants").count({ total: "*" }).first()).total),
+    0,
+  );
+  assert.deepEqual(
+    await Promise.all(adminTables.map((table) => db(table).select("*"))),
+    before,
+  );
+  assert.equal(
+    (await (await purge("DELETE ALL PARTICIPANTS")).json()).data.deleted,
+    0,
+  );
+});
+
+test("UI seeding endpoint requires Super Admin and appends complete dummy batches", async () => {
+  const seed = (data = {}, auth = cookie, headers = {}) =>
+    request(
+      "/participants/seed-dummy",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify(data),
+      },
+      auth,
+    );
+  assert.equal((await seed({}, "")).status, 401);
+  assert.equal((await seed({}, viewerCookie)).status, 403);
+  assert.equal((await seed({ count: 1 })).status, 422);
+  assert.equal(
+    (await seed({}, cookie, { origin: "https://another.example" })).status,
+    403,
+  );
+  assert.equal((await request("/participants/seed-dummy")).status, 405);
+  assert.equal(
+    Number((await db("participants").count({ count: "*" }).first()).count),
+    0,
+  );
+  for (let i = 0; i < 2; i++) {
+    const response = await seed();
+    assert.equal(response.status, 201);
+    assert.equal((await response.json()).data.inserted, 2800);
+  }
+  const rows = await db("participants").select("nip", "prize", "babak");
+  assert.equal(rows.length, 5600);
+  assert.equal(new Set(rows.map((row) => row.nip)).size, 5600);
+  assert.ok(rows.every((row) => row.prize === null && row.babak === null));
+});

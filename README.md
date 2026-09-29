@@ -88,7 +88,7 @@ Role ID 1 is the protected Super Admin role and has full access. Role ID 2 is th
 
 The initial Administrator role receives all four. New roles receive no permissions until assigned. Additional registry keys can be stored, but have no application effect unless implemented in server authorization rules.
 
-DELETE is a soft delete. Administrative tables record creator/updater/deleter IDs; participant timestamps follow the DBML without added actor columns. Unique values stay reserved while archived. A role with active users cannot be archived. Archiving a role or permission archives its assignments; restoring the record does not silently regrant those assignments. `system_settings` is managed as one shared configuration record. `uint(2)` for `babak` is treated as an unsigned integer (MySQL's display width does not restrict the value to two digits).
+Individual-record DELETE is a soft delete; the Super Admin participant purge is a permanent delete. Administrative tables record creator/updater/deleter IDs; participant timestamps follow the DBML without added actor columns. Unique values stay reserved while archived. A role with active users cannot be archived. Archiving a role or permission archives its assignments; restoring the record does not silently regrant those assignments. `system_settings` is managed as one shared configuration record. `uint(2)` for `babak` is treated as an unsigned integer (MySQL's display width does not restrict the value to two digits).
 
 ## HTTP API
 
@@ -154,3 +154,17 @@ npm run test:e2e
 API and migration tests run against isolated in-memory SQLite databases. Migration regressions cover an existing admin schema, unrelated migration history, preservation of rows, repeated runs, and rejection of incompatible tables. Browser tests run the **production build** on port 6339 with a temporary database, then remove it. They cover login, participant creation/edit/archive/restore, role creation and permissions, account creation, branding, dark mode, logout, and read-only role access. They do not access the database configured in `.env`. Run `npm run test:mysql` to run the same API suite through the MySQL driver. It uses connection credentials from `.env`, creates a uniquely named temporary database, and drops that database on completion; the account needs CREATE/DROP DATABASE privileges. It never uses the configured `DB_NAME`. Verify deployment credentials and schema creation in the target environment.
 
 Framework reference: [SolidStart 2 configuration](https://docs.solidjs.com/solid-start/v2/reference/config/solid-start).
+
+## Optional dummy participants and cleanup
+
+Super Admins can select **Participants → Add dummy participants → Add 2,800 dummy participants**. The table refreshes and clears filters after success. Alternatively, after migration, explicitly run `npm run db:seed:dummy` to append **2,800** dummy participants. They are labeled `Dummy Participant 0001` through `2800`, have run-specific `DUMMY-…` NIPs, and start with null prize, babak, and phone. Inserts are batched in one transaction. This is never run by `db:seed`, migrations, or application startup. Running it again adds another 2,800 records.
+
+Super Admins can use **Participants → Delete all participants** and type `DELETE ALL PARTICIPANTS` to permanently remove **all** participants, including archived records, real entries, and winners, regardless of current filters. Admin accounts, roles, permissions, settings, and migration history remain intact. Participant IDs are not reset.
+
+The equivalent CLI command is:
+
+```sh
+npm run db:purge:participants -- --confirm="DELETE ALL PARTICIPANTS"
+```
+
+Neither cleanup nor dummy seeding is automatic. These commands act on the database configured in `.env`.

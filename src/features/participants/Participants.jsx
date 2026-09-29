@@ -31,6 +31,8 @@ export default function Participants() {
         fields={fields}
         columns={["full_name", "nip", "unit_kerja", "no_hp", "prize", "babak"]}
         participants
+        canPurge={user.role_id === 1}
+        canSeed={user.role_id === 1}
         canCreate={can("create")}
         canUpdate={can("update")}
         canDelete={can("delete")}

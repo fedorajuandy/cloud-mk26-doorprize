@@ -163,7 +163,7 @@ curl --fail-with-body -b "$COOKIE_JAR" -X PATCH \
   "$BASE_URL/api/participants/42"
 ```
 
-Creation and updates return the participant in `data`. Archiving returns `{"data":null}`. Unknown body fields are rejected. There is no permanent-delete API.
+Creation and updates return the participant in `data`. Archiving returns `{"data":null}`. Unknown body fields are rejected. Individual deletes are soft deletes; the Super Admin-only purge endpoint below permanently deletes all participants.
 
 ## Batch participant updates
 
@@ -349,3 +349,19 @@ console.log(await imported.json());
 ```
 
 Favicon settings accept local image paths outside `/api/` or HTTPS URLs. `favicon_url` is optional on PUT; omitting it preserves the current icon. The default is `/mandiri.svg`. Public `GET /api/favicon` redirects to the saved icon with `Cache-Control: no-store`, so it works on the login page too. In admin, change **System settings → UI customization → Browser tab icon URL**. Saving refreshes the current tab icon; other tabs use the new icon on their next page load. Use a version query (e.g. `/favicon.png?v=2`) when replacing an image at the same URL.
+
+## Permanently delete all participants
+
+`DELETE /api/participants/purge` is available to **Super Admins only**, with the normal session and origin checks. Send:
+
+```json
+{ "confirmation": "DELETE ALL PARTICIPANTS" }
+```
+
+Success: `{"data":{"deleted":2800}}`. The count is zero if already empty. This is a hard delete of every participant, including archived records and winners; filters do not restrict it and records cannot be restored. Admin accounts, roles, permissions, settings, and migration history are preserved. IDs are not reset. Missing/incorrect confirmation returns `422`; non-Super Admin accounts return `403`.
+
+The ordinary `DELETE /api/participants/:id` remains a soft delete. The optional 2,800-row dummy seeder is available in the admin UI and via `npm run db:seed:dummy` (see README).
+
+## Add dummy participants
+
+`POST /api/participants/seed-dummy` requires a Super Admin session and an empty JSON object `{}`. Returns `201` with `{"data":{"inserted":2800}}` after all inserts commit. This appends 2,800 labeled dummy participants with unique dummy NIPs and null prize/babak/phone. Existing records remain unchanged. Each request appends another batch; requests are not automatically deduplicated. Unknown fields return `422`, other methods `405`, and non-Super Admins `403`. The normal origin checks apply. The admin UI exposes this under **Participants → Add dummy participants**.

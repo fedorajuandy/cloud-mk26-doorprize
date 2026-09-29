@@ -2,7 +2,11 @@ import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { api, download } from "../lib/api.js";
 import Modal from "./Modal.jsx";
 import ImportParticipants from "../features/participants/ImportParticipants.jsx";
+import DeleteAllParticipants from "../features/participants/DeleteAllParticipants.jsx";
+import SeedParticipants from "../features/participants/SeedParticipants.jsx";
 export default function CrudTable(props) {
+  const [seeding, setSeeding] = createSignal(false);
+  const [purging, setPurging] = createSignal(false);
   const [records, setRecords] = createSignal([]),
     [page, setPage] = createSignal(1),
     [pages, setPages] = createSignal(1),
@@ -178,6 +182,35 @@ export default function CrudTable(props) {
   };
   return (
     <section>
+      <Show when={seeding()}>
+        <SeedParticipants
+          close={() => setSeeding(false)}
+          done={(count) => {
+            setSeeding(false);
+            setNotice(`${count.toLocaleString()} dummy participants added.`);
+            setSearch("");
+            setDeleted(false);
+            setStart("");
+            setEnd("");
+            setRound("");
+            setPrizeMode("all");
+            setPrize("");
+            setPage(1);
+            void refresh();
+          }}
+        />
+      </Show>
+      <Show when={purging()}>
+        <DeleteAllParticipants
+          close={() => setPurging(false)}
+          done={(count) => {
+            setPurging(false);
+            setNotice(`${count} participants permanently deleted.`);
+            setPage(1);
+            void refresh();
+          }}
+        />
+      </Show>
       <div class="page-heading">
         <div>
           <p class="eyebrow">
@@ -187,6 +220,16 @@ export default function CrudTable(props) {
           <p class="muted">{props.description}</p>
         </div>
         <div class="page-actions">
+          <Show when={props.participants && props.canSeed}>
+            <button class="secondary" onClick={() => setSeeding(true)}>
+              Add dummy participants
+            </button>
+          </Show>
+          <Show when={props.participants && props.canPurge}>
+            <button class="secondary danger" onClick={() => setPurging(true)}>
+              Delete all participants
+            </button>
+          </Show>
           <Show when={props.participants && props.canCreate}>
             <button class="secondary" onClick={() => setImporting(true)}>
               Import participants

@@ -16,7 +16,9 @@
     "format": "prettier --write src config migrations seeds scripts tests docs *.js *.json README.md",
     "format:check": "prettier --check src config migrations seeds scripts tests docs *.js *.json README.md",
     "test:mysql": "MYSQL_TEST=1 node --test tests/*.test.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:seed:dummy": "node scripts/database.js seed-dummy",
+    "db:purge:participants": "node scripts/database.js purge-participants"
   },
   "dependencies": {
     "@solidjs/router": "^0.16.0",

@@ -123,5 +123,50 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await expect(
     page.getByRole("cell", { name: "000000123456789012" }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Delete all participants", exact: true })
+    .click();
+  const purgeDialog = page.getByRole("dialog", {
+    name: "Permanently delete all participants",
+  });
+  const purgeButton = purgeDialog.getByRole("button", {
+    name: "Permanently delete all participants",
+    exact: true,
+  });
+  await expect(purgeButton).toBeDisabled();
+  await purgeDialog
+    .getByLabel("Type DELETE ALL PARTICIPANTS to confirm")
+    .fill("DELETE ALL PARTICIPANTS");
+  await purgeButton.click();
+  await expect(purgeDialog).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(
+    "participants permanently deleted.",
+  );
+  await page.getByRole("searchbox").fill("");
+  await expect(page.getByText("0 records · Page 1 of 1")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Add dummy participants", exact: true })
+    .click();
+  const seedDialog = page.getByRole("dialog", {
+    name: "Add dummy participants",
+    exact: true,
+  });
+  await expect(seedDialog).toContainText("Each run adds another 2,800 records");
+  await seedDialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.getByText("0 records · Page 1 of 1")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Add dummy participants", exact: true })
+    .click();
+  await seedDialog
+    .getByRole("button", { name: "Add 2,800 dummy participants", exact: true })
+    .click();
+  await expect(seedDialog).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(
+    "2,800 dummy participants added.",
+  );
+  await expect(page.getByText("2800 records · Page 1 of 280")).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "Dummy Participant 2800", exact: true }),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });
