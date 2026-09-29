@@ -6,6 +6,7 @@ const fields = [
   { key: "nip", label: "NIP", required: true, max: 255 },
   { key: "unit_kerja", label: "Unit kerja", required: true, max: 255 },
   { key: "no_hp", label: "Phone number", max: 20 },
+  { key: "sesi", label: "Sesi", type: "number" },
   { key: "babak", label: "Babak", type: "number" },
   { key: "prize", label: "Prize", type: "textarea", max: 16000 },
 ];
@@ -27,9 +28,17 @@ export default function Participants() {
         resource="participants"
         title="Participants"
         singular="Participant"
-        description="Manage participant details, rounds, and prize assignments."
+        description="Manage participant details, sessions, rounds, and prize assignments."
         fields={fields}
-        columns={["full_name", "nip", "unit_kerja", "no_hp", "prize", "babak"]}
+        columns={[
+          "full_name",
+          "nip",
+          "unit_kerja",
+          "no_hp",
+          "prize",
+          "sesi",
+          "babak",
+        ]}
         participants
         canPurge={user.role_id === 1}
         canSeed={user.role_id === 1}

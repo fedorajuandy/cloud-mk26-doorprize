@@ -7,7 +7,15 @@ import { participant } from "../validation.js";
 import { validateWorkbookArchive } from "./archive.js";
 const MAX_FILE = 5 * 1024 * 1024;
 const MAX_ROWS = 5000;
-const fields = ["full_name", "nip", "unit_kerja", "no_hp", "prize", "babak"];
+const fields = [
+  "full_name",
+  "nip",
+  "unit_kerja",
+  "no_hp",
+  "prize",
+  "babak",
+  "sesi",
+];
 const aliases = {
   full_name: "full_name",
   nama: "full_name",
@@ -20,6 +28,8 @@ const aliases = {
   hadiah: "prize",
   babak: "babak",
   round: "babak",
+  sesi: "sesi",
+  session: "sesi",
 };
 const metadata = new Set(["id", "created_at", "updated_at", "deleted_at"]);
 function headerName(value) {
@@ -200,7 +210,7 @@ export async function importParticipants({ db, user, request, method }) {
         if (!key && value) throw new Error("A populated column has no header.");
         if (fields.includes(key))
           record[key] =
-            key === "babak"
+            key === "babak" || key === "sesi"
               ? value === ""
                 ? null
                 : /^\d+$/.test(value)
@@ -231,7 +241,13 @@ export async function importParticipants({ db, user, request, method }) {
     }
     if (rowInvalid) invalidRows++;
     else
-      records.push({ no_hp: null, prize: null, babak: null, ...result.data });
+      records.push({
+        no_hp: null,
+        prize: null,
+        babak: null,
+        sesi: null,
+        ...result.data,
+      });
   }
   if (invalidRows)
     return Response.json(

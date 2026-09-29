@@ -19,12 +19,13 @@ export async function seedDummyParticipants(db) {
         Array.from({ length: Math.min(100, total - offset) }, (_, index) => {
           const number = offset + index + 1;
           return {
-            full_name: `Dummy Participant ${String(number).padStart(4, "0")}`,
+            full_name: `Participant ${String(number).padStart(4, "0")}`,
             nip: `${run}-${String(number).padStart(4, "0")}`,
             unit_kerja: units[(number - 1) % units.length],
             no_hp: null,
             prize: null,
             babak: null,
+            sesi: null,
           };
         }),
       );

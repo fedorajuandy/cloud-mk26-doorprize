@@ -26,7 +26,7 @@ export default function SeedParticipants(props) {
       <form onSubmit={seed}>
         <p>
           Add 2,800 participants labeled “Dummy Participant”, each with a unique
-          dummy NIP and no prize or babak assigned.
+          dummy NIP and no prize, sesi, or babak assigned.
         </p>
         <p>
           Existing participants stay unchanged. Each run adds another 2,800

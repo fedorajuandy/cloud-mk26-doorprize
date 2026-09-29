@@ -44,13 +44,13 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await expect(page.getByRole("alert")).toContainText("Nothing was imported");
   await expect(page.getByText(/Row 2 · nip/)).toBeVisible();
   const data = [
-    "full_name,nip,unit_kerja,no_hp,prize,babak",
-    "Import Alpha,000001,Finance,081234,,1",
-    "Import Beta,000002,Finance,081235,Laptop,2",
-    "Import Gamma,000003,Operations,081236,Laptop,1",
+    "full_name,nip,unit_kerja,no_hp,prize,babak,sesi",
+    "Import Alpha,000001,Finance,081234,,1,1",
+    "Import Beta,000002,Finance,081235,Laptop,2,2",
+    "Import Gamma,000003,Operations,081236,Laptop,1,1",
     ...Array.from(
       { length: 10 },
-      (_, i) => `Import Other ${i},0001${i},Operations,,,3`,
+      (_, i) => `Import Other ${i},0001${i},Operations,,,3,1`,
     ),
   ];
   await page.getByLabel("Participant file").setInputFiles({
@@ -81,12 +81,14 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await expect(
     page.getByRole("cell", { name: "Import Gamma", exact: true }),
   ).toHaveCount(0);
+  await page.getByLabel("Sesi", { exact: true }).fill("2");
   const filteredPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export Excel" }).click();
   const filtered = await downloadedSheet(await filteredPromise);
   expect(filtered.rowCount).toBe(2);
   expect(filtered.getCell("B2").value).toBe("000002");
   expect(filtered.getCell("F2").value).toBe(2);
+  expect(filtered.getCell("G2").value).toBe(2);
   await page.screenshot({
     path: "test-results/participant-file-controls.png",
     fullPage: true,

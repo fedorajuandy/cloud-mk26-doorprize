@@ -79,6 +79,7 @@ Table "participants" {
   "unit_kerja" varchar(255) [not null]
   "nip" varchar(255) [not null]
   "prize" text [default: null]
+  "sesi" uint(2) [default: null]
   "babak" uint(2) [default: null]
 
   "created_at" timestamp [not null, default: `now()`]
@@ -89,6 +90,8 @@ Table "participants" {
     "created_at" [name: 'idx_user_data_created_at']
     (deleted_at, id) [name: 'idx_participants_status_id']
     (deleted_at, babak, id) [name: 'idx_participants_status_round_id']
+    (deleted_at, sesi, id) [name: 'idx_participants_status_session_id']
+    (deleted_at, sesi, babak, id) [name: 'idx_participants_status_session_round_id']
   }
 }
 

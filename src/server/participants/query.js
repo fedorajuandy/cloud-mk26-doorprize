@@ -20,6 +20,12 @@ const filterSchema = z.object({
     .transform(Number)
     .pipe(z.number().int().min(0).max(4294967295))
     .optional(),
+  sesi: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(0).max(4294967295))
+    .optional(),
   start_date: z.iso.date().optional(),
   end_date: z.iso.date().optional(),
 });
@@ -47,6 +53,7 @@ export function participantQuery(db, filters) {
     });
   if (filters.without_prize) query.whereNull("prize");
   if (filters.prize !== undefined) query.where("prize", filters.prize);
+  if (filters.sesi !== undefined) query.where("sesi", filters.sesi);
   if (filters.babak !== undefined) query.where("babak", filters.babak);
   if (filters.start_date)
     query.where("created_at", ">=", `${filters.start_date} 00:00:00`);

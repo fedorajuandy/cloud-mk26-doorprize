@@ -15,6 +15,7 @@ export default function CrudTable(props) {
     [deleted, setDeleted] = createSignal(false),
     [start, setStart] = createSignal(""),
     [end, setEnd] = createSignal(""),
+    [session, setSession] = createSignal(""),
     [round, setRound] = createSignal(""),
     [prizeMode, setPrizeMode] = createSignal("all"),
     [prize, setPrize] = createSignal(""),
@@ -38,6 +39,7 @@ export default function CrudTable(props) {
     });
     if (start()) params.set("start_date", start());
     if (end()) params.set("end_date", end());
+    if (session() !== "") params.set("sesi", session());
     if (round() !== "") params.set("babak", round());
     if (prizeMode() === "none") params.set("without_prize", "true");
     if (prizeMode() === "exact" && prize().trim())
@@ -76,6 +78,7 @@ export default function CrudTable(props) {
     start();
     end();
     round();
+    session();
     prizeMode();
     prize();
     limit();
@@ -193,6 +196,7 @@ export default function CrudTable(props) {
             setStart("");
             setEnd("");
             setRound("");
+            setSession("");
             setPrizeMode("all");
             setPrize("");
             setPage(1);
@@ -338,6 +342,20 @@ export default function CrudTable(props) {
               </label>
             </Show>
             <label>
+              Sesi
+              <input
+                type="number"
+                min="0"
+                max="4294967295"
+                placeholder="All sessions"
+                value={session()}
+                onInput={(event) => {
+                  setSession(event.currentTarget.value);
+                  setPage(1);
+                }}
+              />
+            </label>
+            <label>
               Babak
               <input
                 type="number"
@@ -357,6 +375,7 @@ export default function CrudTable(props) {
                 setStart("");
                 setEnd("");
                 setRound("");
+                setSession("");
                 setPrizeMode("all");
                 setPrize("");
                 setPage(1);

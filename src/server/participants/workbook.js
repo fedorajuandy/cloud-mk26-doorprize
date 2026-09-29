@@ -8,6 +8,7 @@ export const participantColumns = [
   { header: "no_hp", key: "no_hp", width: 22 },
   { header: "prize", key: "prize", width: 36 },
   { header: "babak", key: "babak", width: 12 },
+  { header: "sesi", key: "sesi", width: 12 },
 ];
 export function createParticipantWorkbook() {
   const workbook = new ExcelJS.Workbook();
@@ -27,7 +28,7 @@ export function createParticipantWorkbook() {
     fgColor: { argb: "FF2866D5" },
   };
   header.alignment = { vertical: "middle" };
-  sheet.autoFilter = "A1:F1";
+  sheet.autoFilter = "A1:G1";
   return { workbook, sheet };
 }
 export function workbookResponse(buffer, filename) {

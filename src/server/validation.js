@@ -9,6 +9,7 @@ export const participant = z
     unit_kerja: text(255),
     nip: text(255),
     prize: nullable(16000).optional(),
+    sesi: z.number().int().min(0).max(4294967295).nullable().optional(),
     babak: z.number().int().min(0).max(4294967295).nullable().optional(),
   })
   .strict();

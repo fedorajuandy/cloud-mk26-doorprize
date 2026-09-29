@@ -52,7 +52,7 @@ export default function ImportParticipants(props) {
         <p class="muted">
           Required columns: <code>full_name</code>, <code>nip</code>,{" "}
           <code>unit_kerja</code>. Optional: <code>no_hp</code>,{" "}
-          <code>prize</code>, <code>babak</code>.
+          <code>prize</code>, <code>babak</code>, <code>sesi</code>.
         </p>
         <button
           type="button"

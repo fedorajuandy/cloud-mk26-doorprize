@@ -10,7 +10,15 @@ process.env.JWT_SECRET =
 process.env.ADMIN_PASSWORD = "Participant-tests-password-123";
 process.env.ADMIN_USERNAME = "fileadmin";
 let fixture, db, cookie, viewerCookie;
-const headers = ["full_name", "nip", "unit_kerja", "no_hp", "prize", "babak"];
+const headers = [
+  "full_name",
+  "nip",
+  "unit_kerja",
+  "no_hp",
+  "prize",
+  "babak",
+  "sesi",
+];
 before(async () => {
   fixture = await testDatabase();
   db = fixture.db;
@@ -463,13 +471,20 @@ test("optional dummy seed appends 2800 eligible records and purge removes only p
     adminTables.map((table) => db(table).select("*")),
   );
   assert.equal(await seedDummyParticipants(db), 2800);
-  const dummy = await db("participants").where("nip", "like", "DUMMY-%");
+  const dummy = await db("participants").where(
+    "full_name",
+    "like",
+    "Dummy Participant %",
+  );
   assert.equal(dummy.length, 2800);
   assert.equal(new Set(dummy.map((row) => row.nip)).size, 2800);
   assert.ok(
     dummy.every(
       (row) =>
-        row.prize === null && row.babak === null && row.deleted_at === null,
+        row.prize === null &&
+        row.babak === null &&
+        row.sesi === null &&
+        row.deleted_at === null,
     ),
   );
   assert.deepEqual(
@@ -551,4 +566,79 @@ test("UI seeding endpoint requires Super Admin and appends complete dummy batche
   assert.equal(rows.length, 5600);
   assert.equal(new Set(rows.map((row) => row.nip)).size, 5600);
   assert.ok(rows.every((row) => row.prize === null && row.babak === null));
+});
+
+test("sesi works across CRUD, batch, combined filters, import and Excel export", async () => {
+  const write = (path, method, data) =>
+    request(path, {
+      method,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  const created = await write("/participants", "POST", {
+    full_name: "Session winner",
+    nip: "S001",
+    unit_kerja: "Finance",
+    sesi: 1,
+    babak: 2,
+    prize: "Laptop",
+  });
+  assert.equal(created.status, 201);
+  const id = (await created.json()).data.id;
+  assert.equal(
+    (await rows("/participants?sesi=1&babak=2&prize=Laptop")).pagination.total,
+    1,
+  );
+  assert.equal((await rows("/participants?sesi=2")).pagination.total, 0);
+  assert.equal((await batchUpdate([{ id, prize: "Tablet" }])).status, 200);
+  assert.equal((await db("participants").where({ id }).first()).sesi, 1);
+  assert.equal((await batchUpdate([{ id, sesi: 0 }])).status, 200);
+  assert.equal((await rows("/participants?sesi=0")).pagination.total, 1);
+  for (const sesi of [-1, 1.5, 4294967296, "1"])
+    assert.equal(
+      (await write(`/participants/${id}`, "PATCH", { sesi })).status,
+      422,
+    );
+  for (const sesi of ["-1", "1.5", "4294967296", "abc"])
+    assert.equal((await request(`/participants?sesi=${sesi}`)).status, 422);
+  assert.equal(
+    (await write(`/participants/${id}`, "PATCH", { sesi: null })).status,
+    200,
+  );
+  assert.equal((await db("participants").where({ id }).first()).sesi, null);
+  assert.equal(
+    (
+      await upload(
+        "full_name,nip,unit_kerja,session,babak,prize\nCSV session,S002,Finance,3,2,Laptop",
+      )
+    ).status,
+    201,
+  );
+  assert.equal(
+    (
+      await upload(
+        await workbookBytes([
+          ["Excel session", "S003", "Finance", null, null, 1, 3],
+        ]),
+        "sessions.xlsx",
+      )
+    ).status,
+    201,
+  );
+  assert.equal((await rows("/participants?sesi=3")).pagination.total, 2);
+  assert.equal(
+    (await rows("/participants?sesi=3&without_prize=true")).pagination.total,
+    1,
+  );
+  const sheet = await readWorkbook(
+    await request("/participants/export?sesi=3&babak=2&prize=Laptop"),
+  );
+  assert.equal(sheet.rowCount, 2);
+  assert.equal(sheet.getCell("G1").value, "sesi");
+  assert.equal(sheet.getCell("G2").value, 3);
+  assert.equal(
+    (await upload("full_name,nip,unit_kerja,sesi\nInvalid,S004,Finance,-1"))
+      .status,
+    422,
+  );
 });

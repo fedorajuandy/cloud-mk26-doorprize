@@ -35,7 +35,7 @@ test("adopts existing admin tables without replaying unrelated migration history
     });
     const history = await db("knex_migrations");
     const [, applied] = await db.migrate.latest();
-    assert.equal(applied.length, 3);
+    assert.equal(applied.length, 4);
     assert.ok(await db.schema.hasTable("participants"));
     assert.deepEqual(await db("users").first(), before);
     assert.deepEqual(
@@ -93,6 +93,45 @@ test("rejects incompatible existing tables before creating application tables", 
     );
     assert.equal(await db.schema.hasTable("users"), false);
     assert.equal(await db.schema.hasTable("participants"), false);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("sesi migration preserves existing participants and creates session indexes", async () => {
+  const fixture = await testDatabase(),
+    { db } = fixture;
+  try {
+    await up(db);
+    await db("participants").insert({
+      full_name: "Before sesi",
+      nip: "S001",
+      unit_kerja: "Finance",
+      prize: "Laptop",
+      babak: 2,
+    });
+    const before = await db("participants").first();
+    const { up: addSesi } =
+      await import("../migrations/004_participant_sesi.js");
+    await addSesi(db);
+    assert.deepEqual(await db("participants").first(), {
+      ...before,
+      sesi: null,
+    });
+    await db("participants").update({ sesi: 3 });
+    await addSesi(db);
+    assert.equal((await db("participants").first()).sesi, 3);
+    const indexes =
+      db.client.config.client === "mysql2"
+        ? await db("information_schema.statistics")
+            .whereRaw("TABLE_SCHEMA = DATABASE()")
+            .where("TABLE_NAME", "participants")
+            .pluck("INDEX_NAME")
+        : await db("sqlite_master")
+            .where({ type: "index", tbl_name: "participants" })
+            .pluck("name");
+    assert.ok(indexes.includes("idx_participants_status_session_id"));
+    assert.ok(indexes.includes("idx_participants_status_session_round_id"));
   } finally {
     await fixture.close();
   }

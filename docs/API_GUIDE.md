@@ -70,6 +70,7 @@ Send JSON with `Content-Type: application/json`. Upload files as multipart, and 
 | `no_hp`      | String/null    | Optional, at most 20 characters; phone number                       |
 | `prize`      | String/null    | Optional, at most 16,000 characters                                 |
 | `babak`      | Integer/null   | Optional, 0–4,294,967,295 inclusive                                 |
+| `sesi`       | Integer/null   | Optional, 0–4,294,967,295 inclusive                                 |
 | `created_at` | Timestamp      | Server-managed                                                      |
 | `updated_at` | Timestamp/null | Server-managed                                                      |
 | `deleted_at` | Timestamp/null | Archive timestamp                                                   |
@@ -89,6 +90,7 @@ All filters are optional. Records are ordered by descending `id`. Only active pa
 | `without_prize` | `false`      | `true` returns only SQL NULL prizes; `false` leaves prize unrestricted                  |
 | `prize`         | Unrestricted | Equality comparison for one prize name; URL-encode spaces/special characters            |
 | `babak`         | Unrestricted | One round, including `0`                                                                |
+| `sesi`          | Unrestricted | One session, including `0`                                                              |
 | `search`        | Empty        | Substring search across name, NIP, unit kerja, phone, and prize; maximum 255 characters |
 | `start_date`    | Unrestricted | Inclusive created date, `YYYY-MM-DD`                                                    |
 | `end_date`      | Unrestricted | Inclusive created date, `YYYY-MM-DD`                                                    |
@@ -183,7 +185,7 @@ curl --fail-with-body -b "$COOKIE_JAR" -X PATCH \
 ```
 
 - Omitted fields remain unchanged. For example, supplying only `babak` preserves the existing prize and personal details.
-- Explicit `null` clears `prize`, `babak`, or `no_hp`; `babak: 0` sets round zero. Blank prize/phone strings also become null, matching individual updates.
+- Explicit `null` clears `prize`, `babak`, `sesi`, or `no_hp`; `babak: 0` sets round zero. Blank prize/phone strings also become null, matching individual updates.
 - Other editable participant fields (`full_name`, `nip`, `unit_kerja`, `no_hp`) are optional and use the same validation as individual updates. Required text fields cannot be cleared.
 - IDs and timestamps cannot be changed. `updated_at` is set automatically for each targeted record. Unknown fields, duplicate IDs, empty updates, and invalid values return `422`.
 - Every ID must identify an active participant. A missing or archived participant returns `404`.
@@ -205,9 +207,9 @@ curl --fail-with-body -b "$COOKIE_JAR" \
 
 Required headers: `full_name`, `nip`, `unit_kerja`.
 
-Optional headers: `no_hp`, `prize`, `babak`.
+Optional headers: `no_hp`, `prize`, `babak`, `sesi`.
 
-Headers are case-insensitive and spaces/hyphens normalize to underscores, so `Full name`, `Unit kerja`, and `Phone number` work. Additional aliases: `nama`/`nama_lengkap` → `full_name`, `phone_number` → `no_hp`, `hadiah` → `prize`, `round` → `babak`. `id`, `created_at`, `updated_at`, and `deleted_at` columns are ignored if present. Other unknown or duplicate columns are rejected.
+Headers are case-insensitive and spaces/hyphens normalize to underscores, so `Full name`, `Unit kerja`, and `Phone number` work. Additional aliases: `nama`/`nama_lengkap` → `full_name`, `phone_number` → `no_hp`, `hadiah` → `prize`, `round` → `babak`, `session` → `sesi`. `id`, `created_at`, `updated_at`, and `deleted_at` columns are ignored if present. Other unknown or duplicate columns are rejected.
 
 Example CSV:
 
@@ -364,4 +366,16 @@ The ordinary `DELETE /api/participants/:id` remains a soft delete. The optional 
 
 ## Add dummy participants
 
-`POST /api/participants/seed-dummy` requires a Super Admin session and an empty JSON object `{}`. Returns `201` with `{"data":{"inserted":2800}}` after all inserts commit. This appends 2,800 labeled dummy participants with unique dummy NIPs and null prize/babak/phone. Existing records remain unchanged. Each request appends another batch; requests are not automatically deduplicated. Unknown fields return `422`, other methods `405`, and non-Super Admins `403`. The normal origin checks apply. The admin UI exposes this under **Participants → Add dummy participants**.
+`POST /api/participants/seed-dummy` requires a Super Admin session and an empty JSON object `{}`. Returns `201` with `{"data":{"inserted":2800}}` after all inserts commit. This appends 2,800 labeled dummy participants with unique dummy NIPs and null prize/babak/sesi/phone. Existing records remain unchanged. Each request appends another batch; requests are not automatically deduplicated. Unknown fields return `422`, other methods `405`, and non-Super Admins `403`. The normal origin checks apply. The admin UI exposes this under **Participants → Add dummy participants**.
+
+## Participant sessions (`sesi`)
+
+`sesi` is an optional nullable unsigned integer (0–4,294,967,295), independent of `babak`. Existing participants and older imports default to null. Create, PUT/PATCH, and batch updates accept `sesi`; omitting it preserves the existing value on updates, while explicit null clears it. MySQL `uint(2)` does not limit the value to two digits.
+
+Use `GET /api/participants?sesi=1&babak=2&prize=Laptop` for winners in a specific session/round/prize, or `GET /api/participants?sesi=1&without_prize=true` for eligible participants in a session. All supplied filters combine with AND; omitting `sesi` includes all sessions. The same filters apply to `/api/participants/export`.
+
+CSV/XLSX imports accept optional `sesi` (alias `session`), with blank cells treated as null. Excel templates and exports append `sesi` as column G, preserving the prior six columns. Dummy participants start with null sesi. A batch winner assignment can be sent as:
+
+```json
+{ "updates": [{ "id": 101, "sesi": 1, "babak": 2, "prize": "Laptop" }] }
+```

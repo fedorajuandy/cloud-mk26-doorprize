@@ -113,7 +113,7 @@ Success: `{ "data": ... }`. Errors: `{ "error": { "message": "..." } }`.
 | GET                     | `/api/role-permissions`, `/api/role-permissions/:roleId`                           | Roles with active permission assignments                                                        |
 | PUT                     | `/api/role-permissions/:roleId`                                                    | Atomically replace assignments with `{permission_ids: [1, 2]}`; use an empty list to remove all |
 
-List endpoints accept `page` (default 1), `limit` (default 20, maximum 100), `search`, and `deleted=true`. Participants also accept `start_date`, `end_date` (YYYY-MM-DD, inclusive), `babak`, exact `prize`, and `without_prize=true`. Responses contain `records` and `pagination: {page, limit, total, total_pages}`. Dates are interpreted in the database's timezone. All write payloads are JSON; unknown fields are rejected. PUT/PATCH accept partial fields. A user's password can be changed with PUT `/api/users/:id` and `{password: "..."}`. Password hashes are never returned.
+List endpoints accept `page` (default 1), `limit` (default 20, maximum 100), `search`, and `deleted=true`. Participants also accept `start_date`, `end_date` (YYYY-MM-DD, inclusive), `babak`, exact `prize`, `sesi`, and `without_prize=true`. Responses contain `records` and `pagination: {page, limit, total, total_pages}`. Dates are interpreted in the database's timezone. All write payloads are JSON; unknown fields are rejected. PUT/PATCH accept partial fields. A user's password can be changed with PUT `/api/users/:id` and `{password: "..."}`. Password hashes are never returned.
 
 Example participant payload:
 
@@ -157,7 +157,7 @@ Framework reference: [SolidStart 2 configuration](https://docs.solidjs.com/solid
 
 ## Optional dummy participants and cleanup
 
-Super Admins can select **Participants → Add dummy participants → Add 2,800 dummy participants**. The table refreshes and clears filters after success. Alternatively, after migration, explicitly run `npm run db:seed:dummy` to append **2,800** dummy participants. They are labeled `Dummy Participant 0001` through `2800`, have run-specific `DUMMY-…` NIPs, and start with null prize, babak, and phone. Inserts are batched in one transaction. This is never run by `db:seed`, migrations, or application startup. Running it again adds another 2,800 records.
+Super Admins can select **Participants → Add dummy participants → Add 2,800 dummy participants**. The table refreshes and clears filters after success. Alternatively, after migration, explicitly run `npm run db:seed:dummy` to append **2,800** dummy participants. They are labeled `Dummy Participant 0001` through `2800`, have run-specific `DUMMY-…` NIPs, and start with null prize, sesi, babak, and phone. Inserts are batched in one transaction. This is never run by `db:seed`, migrations, or application startup. Running it again adds another 2,800 records.
 
 Super Admins can use **Participants → Delete all participants** and type `DELETE ALL PARTICIPANTS` to permanently remove **all** participants, including archived records, real entries, and winners, regardless of current filters. Admin accounts, roles, permissions, settings, and migration history remain intact. Participant IDs are not reset.
 
@@ -168,3 +168,5 @@ npm run db:purge:participants -- --confirm="DELETE ALL PARTICIPANTS"
 ```
 
 Neither cleanup nor dummy seeding is automatic. These commands act on the database configured in `.env`.
+
+Session support: run `npm run db:migrate` to add nullable `participants.sesi`. Admin forms, filters, CRUD/batch APIs, CSV/XLSX imports, templates, and exports support it. New indexes `(deleted_at, sesi, id)` and `(deleted_at, sesi, babak, id)` support session-only and session/round filtering with ID pagination; the existing babak-only index remains.
