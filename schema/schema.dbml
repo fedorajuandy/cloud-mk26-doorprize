@@ -102,5 +102,6 @@ Table "system_settings" {
   "id" uint [pk, not null, increment]
   "logo_url" varchar(255) [not null, default: "/abracodebra.svg"]
   "login_bg_color" varchar(50) [not null, default: "#f3f4f6"]
+  "login_bg_image" varchar(2048) [default: null]
   "updated_at" datetime [default: null, note: 'ON UPDATE current_timestamp()']
 }

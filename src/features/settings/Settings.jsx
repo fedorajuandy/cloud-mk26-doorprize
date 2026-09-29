@@ -8,6 +8,7 @@ import {
   Match,
 } from "solid-js";
 import { useAdmin } from "../../components/AdminLayout.jsx";
+import { loginBackground } from "../../lib/branding.js";
 import CrudTable from "../../components/CrudTable.jsx";
 import { allRecords, api } from "../../lib/api.js";
 export default function Settings() {
@@ -20,10 +21,12 @@ export default function Settings() {
     [error, setError] = createSignal(""),
     [notice, setNotice] = createSignal(""),
     [busy, setBusy] = createSignal(false);
+  const [brandingLoading, setBrandingLoading] = createSignal(true);
   const [branding, setBranding] = createSignal({
     logo_url: "",
     favicon_url: "/mandiri.svg",
     login_bg_color: "#f3f4f6",
+    login_bg_image: null,
   });
   async function loadRoles() {
     const result = await api("/role-permissions");
@@ -36,8 +39,11 @@ export default function Settings() {
   async function load() {
     setError("");
     try {
-      if (tab() === "branding") setBranding(await api("/settings"));
-      else if (tab() === "access")
+      if (tab() === "branding") {
+        setBrandingLoading(true);
+        setBranding(await api("/settings"));
+        setBrandingLoading(false);
+      } else if (tab() === "access")
         await Promise.all([loadRoles(), loadPermissions()]);
       else await loadRoles();
     } catch (e) {
@@ -89,6 +95,7 @@ export default function Settings() {
           logo_url: branding().logo_url,
           favicon_url: branding().favicon_url,
           login_bg_color: branding().login_bg_color,
+          login_bg_image: branding().login_bg_image || null,
         }),
       });
       const icon = document.querySelector('link[rel="icon"]');
@@ -290,78 +297,100 @@ export default function Settings() {
             </div>
           </div>
           <form class="card settings-card" onSubmit={saveBranding}>
-            <label>
-              Logo URL
-              <input
-                required
-                maxlength="255"
-                placeholder="/abracodebra.svg"
-                value={branding().logo_url}
-                onInput={(e) =>
-                  setBranding((v) => ({
-                    ...v,
-                    logo_url: e.currentTarget.value,
-                  }))
-                }
-              />
-              <small class="muted">
-                Use a local absolute path or an HTTPS image URL.
-              </small>
-            </label>
-            <label>
-              Browser tab icon URL
-              <input
-                required
-                maxlength="255"
-                placeholder="/mandiri.svg"
-                value={branding().favicon_url || "/mandiri.svg"}
-                onInput={(e) =>
-                  setBranding((v) => ({
-                    ...v,
-                    favicon_url: e.currentTarget.value,
-                  }))
-                }
-              />
-              <small class="muted">
-                Use a square SVG, PNG, or ICO image. Place local files in
-                public/ and enter /filename.svg, or use an HTTPS image URL.
-              </small>
-            </label>
-            <div>
-              <p class="muted">Browser tab icon preview</p>
-              <img
-                src={branding().favicon_url || "/mandiri.svg"}
-                alt="Browser tab icon preview"
-                width="32"
-                height="32"
-                style={{ "object-fit": "contain" }}
-              />
-            </div>
-            <label>
-              Login background
-              <input
-                type="color"
-                value={branding().login_bg_color}
-                onInput={(e) =>
-                  setBranding((v) => ({
-                    ...v,
-                    login_bg_color: e.currentTarget.value,
-                  }))
-                }
-              />
-            </label>
-            <div
-              class="branding-preview"
-              style={{ "background-color": branding().login_bg_color }}
+            <fieldset
+              disabled={brandingLoading() || busy()}
+              style={{ display: "contents" }}
             >
-              <img
-                src={branding().logo_url || "/abracodebra.svg"}
-                alt="Logo preview"
-              />
-            </div>
-            <button class="primary" disabled={busy()}>
-              {busy() ? "Saving…" : "Save branding"}
-            </button>
+              <label>
+                Logo URL
+                <input
+                  required
+                  maxlength="255"
+                  placeholder="/abracodebra.svg"
+                  value={branding().logo_url}
+                  onInput={(e) =>
+                    setBranding((v) => ({
+                      ...v,
+                      logo_url: e.currentTarget.value,
+                    }))
+                  }
+                />
+                <small class="muted">
+                  Use a local absolute path or an HTTPS image URL.
+                </small>
+              </label>
+              <label>
+                Browser tab icon URL
+                <input
+                  required
+                  maxlength="255"
+                  placeholder="/mandiri.svg"
+                  value={branding().favicon_url || "/mandiri.svg"}
+                  onInput={(e) =>
+                    setBranding((v) => ({
+                      ...v,
+                      favicon_url: e.currentTarget.value,
+                    }))
+                  }
+                />
+                <small class="muted">
+                  Use a square SVG, PNG, or ICO image. Place local files in
+                  public/ and enter /filename.svg, or use an HTTPS image URL.
+                </small>
+              </label>
+              <div>
+                <p class="muted">Browser tab icon preview</p>
+                <img
+                  src={branding().favicon_url || "/mandiri.svg"}
+                  alt="Browser tab icon preview"
+                  width="32"
+                  height="32"
+                  style={{ "object-fit": "contain" }}
+                />
+              </div>
+              <label>
+                Login background image URL
+                <input
+                  aria-label="Login background image URL"
+                  maxlength="2048"
+                  placeholder="/login-background.jpg"
+                  value={branding().login_bg_image || ""}
+                  onInput={(event) =>
+                    setBranding((value) => ({
+                      ...value,
+                      login_bg_image: event.currentTarget.value,
+                    }))
+                  }
+                />
+                <small class="muted">
+                  Optional. Use a local image path or HTTPS URL. Leave blank to
+                  use the background color. The image fills the screen behind
+                  the sign-in card.
+                </small>
+              </label>
+              <label>
+                Login background
+                <input
+                  type="color"
+                  value={branding().login_bg_color}
+                  onInput={(e) =>
+                    setBranding((v) => ({
+                      ...v,
+                      login_bg_color: e.currentTarget.value,
+                    }))
+                  }
+                />
+              </label>
+              <div class="branding-preview" style={loginBackground(branding())}>
+                <img
+                  src={branding().logo_url || "/abracodebra.svg"}
+                  alt="Logo preview"
+                />
+              </div>
+              <button class="primary" disabled={busy()}>
+                {busy() ? "Saving…" : "Save branding"}
+              </button>
+            </fieldset>
           </form>
         </Match>
       </Switch>

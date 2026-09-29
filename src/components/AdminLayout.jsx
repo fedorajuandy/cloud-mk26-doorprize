@@ -47,7 +47,7 @@ export default function AdminLayout(props) {
         <div class="brand">
           <img src={logo()} alt="Company logo" />
           <strong>
-            MK26 <span>ADMIN CMS</span>
+            DOORPRIZE <span>ADMIN CMS</span>
           </strong>
         </div>
         <nav>

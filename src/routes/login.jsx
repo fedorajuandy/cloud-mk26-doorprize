@@ -1,5 +1,6 @@
 import { createSignal, onMount, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { loginBackground } from "../lib/branding.js";
 import { api } from "../lib/api.js";
 export default function Login() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function Login() {
   const [settings, setSettings] = createSignal({
     logo_url: "/abracodebra.svg",
     login_bg_color: "#f3f4f6",
+    login_bg_image: null,
   });
   onMount(async () => {
     try {
@@ -35,15 +37,12 @@ export default function Login() {
     }
   }
   return (
-    <main
-      class="login-page"
-      style={{ "background-color": settings().login_bg_color }}
-    >
+    <main class="login-page" style={loginBackground(settings())}>
       <section class="login-card">
         <img class="login-logo" src={settings().logo_url} alt="Company logo" />
         <p class="eyebrow">MANDIRI CARNAVAL 2026 DOORPRIZE</p>
         <h1>Admin portal</h1>
-        <p class="muted">Sign in to manage your participants.</p>
+        <p class="muted">Sign in to manage your participants</p>
         <form onSubmit={submit}>
           <label>
             Username

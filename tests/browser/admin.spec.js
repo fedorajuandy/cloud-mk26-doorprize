@@ -79,7 +79,7 @@ test("admin signs in, manages participants, roles, accounts, permissions, and br
   ).toBeVisible();
   await page.getByRole("button", { name: "UI customization" }).click();
   await page.getByLabel("Browser tab icon URL").fill("/mandiri.svg?v=test");
-  await page.getByLabel("Login background").fill("#eaf0ff");
+  await page.getByLabel("Login background", { exact: true }).fill("#eaf0ff");
   await page.getByRole("button", { name: "Save branding" }).click();
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
     "href",

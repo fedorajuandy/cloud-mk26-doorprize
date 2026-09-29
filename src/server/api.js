@@ -55,6 +55,7 @@ export async function handleApi(request, db) {
           logo_url: "/abracodebra.svg",
           favicon_url: "/mandiri.svg",
           login_bg_color: "#f3f4f6",
+          login_bg_image: null,
         },
       );
     const user = await authenticate(request, db);

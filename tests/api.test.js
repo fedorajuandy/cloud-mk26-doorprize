@@ -416,3 +416,42 @@ test("favicon settings persist, validate URLs and publicly redirect without cach
     403,
   );
 });
+
+test("optional login background image persists, validates and clears independently", async () => {
+  const settings = {
+    logo_url: "/mandiri.svg",
+    login_bg_color: "#123456",
+    login_bg_image: "/background.jpg",
+  };
+  assert.equal((await request("/settings", "PUT", settings)).status, 200);
+  assert.equal(
+    (await request("/settings", "GET", undefined, "")).body.data.login_bg_image,
+    "/background.jpg",
+  );
+  const { login_bg_image, ...legacy } = settings;
+  assert.equal((await request("/settings", "PUT", legacy)).status, 200);
+  assert.equal(
+    (await request("/settings")).body.data.login_bg_image,
+    login_bg_image,
+  );
+  for (const value of [
+    "javascript:alert(1)",
+    "//example.com/image.png",
+    "http://example.com/image.png",
+  ])
+    assert.equal(
+      (
+        await request("/settings", "PUT", {
+          ...settings,
+          login_bg_image: value,
+        })
+      ).status,
+      422,
+    );
+  assert.equal(
+    (await request("/settings", "PUT", { ...settings, login_bg_image: "" }))
+      .status,
+    200,
+  );
+  assert.equal((await request("/settings")).body.data.login_bg_image, null);
+});

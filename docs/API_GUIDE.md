@@ -422,3 +422,7 @@ CSV/XLSX imports accept optional `email` and `profile_picture` headers. Template
 The admin form requires Unique ID. APIs return it, search includes it, and `sort_by=unique_id` is supported. It may be changed through PUT/PATCH or batch updates, subject to uniqueness; omitting it preserves the value, and null/blank is rejected. Existing numeric `id` remains the route and batch identifier. Resetting results preserves unique IDs.
 
 Templates/exports append `unique_id` as text in column J. Spreadsheet imports require a `unique_id` header; old files must add this column. The migration backfills missing IDs on existing participants with random UUID v4 values before adding the NOT NULL constraint and unique index. Dummy seeding generates a fresh random UUID v4 for each participant.
+
+## Login background image
+
+Settings include nullable `login_bg_image` (maximum 2,048 characters), accepting a local absolute image path or HTTPS URL. Super Admins can save it through `PUT /api/settings` alongside the existing branding fields. Omission preserves the saved image; blank or null clears it. Public `GET /api/settings` returns it for the login page. The image covers the area behind the sign-in card; `login_bg_color` remains the fallback when no image is configured or the image cannot load. Admin: **System settings → UI customization → Login background image URL**. The branding preview uses the same image/color settings.

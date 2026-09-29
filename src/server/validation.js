@@ -74,6 +74,18 @@ export const settings = z
         }
       }, "Use a local image path outside /api/ or an HTTPS image URL.")
       .optional(),
+    login_bg_image: nullable(2048)
+      .refine((value) => {
+        if (value === null) return true;
+        if (/[\\\s]/.test(value)) return false;
+        if (/^\/(?!\/)/.test(value)) return true;
+        try {
+          return new URL(value).protocol === "https:";
+        } catch {
+          return false;
+        }
+      }, "Use a local absolute image path or an HTTPS image URL.")
+      .optional(),
     login_bg_color: z
       .string()
       .regex(/^#[0-9a-fA-F]{6}$/, "Use a six-digit hex color."),
