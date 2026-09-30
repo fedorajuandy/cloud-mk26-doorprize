@@ -716,3 +716,24 @@ th[aria-sort="ascending"],
 th[aria-sort="descending"] {
   color: var(--link);
 }
+.integration-card {
+  max-width: 1000px;
+}
+.integration-card fieldset {
+  display: grid;
+  gap: 16px;
+}
+.integration-card p {
+  margin: 0;
+}
+.integration-history {
+  margin-top: 24px;
+}
+.integration-feedback {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}

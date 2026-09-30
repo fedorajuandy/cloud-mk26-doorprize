@@ -10,13 +10,24 @@ export async function resetParticipantResults({ db, user, request, method }) {
     .strict()
     .parse(await body(request));
   // One atomic UPDATE includes archived records; untouched rows retain timestamps.
-  const updated = await db("participants")
-    .where((query) =>
-      query
-        .whereNotNull("prize")
-        .orWhereNotNull("babak")
-        .orWhereNotNull("sesi"),
-    )
-    .update({ prize: null, babak: null, sesi: null, updated_at: db.fn.now() });
+  const updated = await db.transaction(async (trx) => {
+    const count = await trx("participants")
+      .where((query) =>
+        query
+          .whereNotNull("prize")
+          .orWhereNotNull("babak")
+          .orWhereNotNull("sesi"),
+      )
+      .update({
+        prize: null,
+        babak: null,
+        sesi: null,
+        updated_at: trx.fn.now(),
+      });
+    await trx("doorprize_links")
+      .whereNotNull("last_prize")
+      .update({ last_prize: null });
+    return count;
+  });
   return json({ updated });
 }

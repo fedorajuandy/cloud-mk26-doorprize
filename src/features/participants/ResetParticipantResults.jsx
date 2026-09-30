@@ -34,7 +34,7 @@ export default function ResetParticipantResults(props) {
           archived records. Current filters do not apply. Participant details
           and archive status are preserved. Active participants become eligible
           for the draw again. Previous results cannot be restored by this
-          action.
+          action. Queued or published source-site awards are not canceled.
         </p>
         <Show when={error()}>
           <p role="alert" class="error">

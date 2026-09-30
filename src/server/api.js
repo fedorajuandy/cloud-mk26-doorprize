@@ -61,6 +61,10 @@ export async function handleApi(request, db) {
     const user = await authenticate(request, db);
     if (resource === "me" && !rawId && method === "GET") return json(user);
     const context = { db, user, resource, rawId, action, method, url, request };
+    if (resource === "integration" && rawId === "doorprize") {
+      const { integrationApi } = await import("./integration/api.js");
+      return await integrationApi(context);
+    }
     if (resource === "participants" && !action) {
       if (rawId === "seed-dummy") {
         const { seedParticipants } = await import("./participants/seed.js");

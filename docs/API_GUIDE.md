@@ -426,3 +426,7 @@ Templates/exports append `unique_id` as text in column J. Spreadsheet imports re
 ## Login background image
 
 Settings include nullable `login_bg_image` (maximum 2,048 characters), accepting a local absolute image path or HTTPS URL. Super Admins can save it through `PUT /api/settings` alongside the existing branding fields. Omission preserves the saved image; blank or null clears it. Public `GET /api/settings` returns it for the login page. The image covers the area behind the sign-in card; `login_bg_color` remains the fallback when no image is configured or the image cannot load. Admin: **System settings → UI customization → Login background image URL**. The branding preview uses the same image/color settings.
+
+## Source-site synchronization
+
+See [Doorprize integration setup](DOORPRIZE-SETUP.md) for control routes and deployment. Existing single/batch winner updates atomically queue source publication when enabled and linked; API success confirms local persistence, not remote acknowledgment. The source provides only ID/NIP, and accepts awards rather than mutable participant prize fields. Local reset/purge does not revoke queued or published source awards. Source credentials are backend-only and separate from roulette browser authentication.

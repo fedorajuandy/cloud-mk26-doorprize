@@ -1,3 +1,4 @@
+import { queueWinnerChanges } from "../integration/outbox.js";
 import { z } from "zod";
 import { authorize } from "../auth.js";
 import { fail } from "../errors.js";
@@ -60,6 +61,10 @@ export async function updateParticipants({ db, user, request, method }) {
       await trx("participants")
         .whereIn("id", group.ids)
         .update({ ...group.fields, updated_at: trx.fn.now() });
+    await queueWinnerChanges(
+      trx,
+      await trx("participants").whereIn("id", ids).orderBy("id"),
+    );
   });
   return json({ updated: ids.length, ids });
 }

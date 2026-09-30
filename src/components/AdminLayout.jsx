@@ -56,6 +56,9 @@ export default function AdminLayout(props) {
             Participants
           </A>
           <Show when={user()?.role_id === 1}>
+            <A href="/doorprize-integration" activeClass="active">
+              Doorprize integration
+            </A>
             <A href="/admin-settings" activeClass="active">
               System settings
             </A>

@@ -18,7 +18,8 @@
     "test:mysql": "MYSQL_TEST=1 node --test tests/*.test.js",
     "lint": "eslint .",
     "db:seed:dummy": "node scripts/database.js seed-dummy",
-    "db:purge:participants": "node scripts/database.js purge-participants"
+    "db:purge:participants": "node scripts/database.js purge-participants",
+    "integration:worker": "node scripts/integration-worker.js"
   },
   "dependencies": {
     "@solidjs/router": "^0.16.0",

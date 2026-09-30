@@ -31,7 +31,8 @@ export default function DeleteAllParticipants(props) {
         <p>
           This permanently deletes every participant, including archived records
           and winners. Current filters do not apply. This cannot be undone.
-          Admin accounts and system settings are preserved.
+          Admin accounts and system settings are preserved. Queued or published
+          source-site awards are not canceled.
         </p>
         <Show when={error()}>
           <p role="alert" class="error">

@@ -176,3 +176,7 @@ To keep participants but clear the draw results, Super Admins can use **Particip
 Run `npm run db:migrate` for nullable participant `email` and `profile_picture` fields. Both support CRUD/batch updates, admin editing, sorting, CSV/XLSX import/export, and null defaults. Email is searchable; profile pictures use image URLs or local paths and render as thumbnails. No additional indexes are introduced for these optional display/contact fields.
 
 `unique_id` is now required and unique for participant creation/imports. Run `npm run db:migrate` to backfill existing participants with UUIDs and add the unique constraint. Import spreadsheets must include a `unique_id` column; exports append it as column J. Dummy participants get random UUID v4 IDs. Numeric `id` remains the API route/batch identifier.
+
+## Source-site doorprize integration
+
+See [deployment and operation](docs/DOORPRIZE-SETUP.md) and the [source API contract](docs/DOORPRIZE-INTEGRATION.md). Configure server-only `DOORPRIZE_SOURCE_URL`/`DOORPRIZE_SOURCE_TOKEN`, migrate, and run `npm run integration:worker` as a persistent second process. Super Admin controls are under **Doorprize integration (left sidebar, below Participants)**. Participant syncing, automatic winner delivery, persistent retries, and delivery status use server-to-server HTTP; the source site notifies its participants in real time. The integration starts disabled and defaults to linking existing participants by NIP.

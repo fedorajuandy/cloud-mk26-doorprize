@@ -4,7 +4,11 @@ import { fail } from "../errors.js";
 import { body, json } from "../http.js";
 
 export async function deleteAllParticipants(db) {
-  return db.transaction((trx) => trx("participants").delete());
+  return db.transaction(async (trx) => {
+    const count = await trx("participants").delete();
+    await trx("doorprize_links").delete();
+    return count;
+  });
 }
 export async function purgeParticipants({ db, user, request, method }) {
   authorize(user);

@@ -1,3 +1,4 @@
+import { queueWinnerChanges } from "../integration/outbox.js";
 import { sortOptions, applySort } from "../sorting.js";
 import { hash } from "bcryptjs";
 import { z } from "zod";
@@ -225,10 +226,13 @@ export async function handleRecords({
           ...(table !== "participants" ? { created_by: user.id } : {}),
         });
         const row = await trx(table).where({ id: newId }).first();
+        if (table === "participants") await queueWinnerChanges(trx, [row]);
         return table === "users" ? safeUser(row) : row;
       }
     }
     const row = await trx(table).where({ id }).first();
+    if (table === "participants" && !action)
+      await queueWinnerChanges(trx, [row]);
     return table === "users" ? safeUser(row) : row;
   });
   return json(result, method === "POST" ? 201 : 200);
