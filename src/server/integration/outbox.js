@@ -47,7 +47,8 @@ export async function queueWinnerChanges(trx, records, { force = false } = {}) {
           .update({ last_prize: null });
       continue;
     }
-    if (row.deleted_at || link.last_prize === row.prize) continue;
+    if (row.is_invalid || row.deleted_at || link.last_prize === row.prize)
+      continue;
     if (link.last_prize !== null)
       fail(
         409,

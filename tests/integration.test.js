@@ -435,3 +435,21 @@ test("transient import failure preserves cursor and a paused job makes no reques
   assert.equal(state.import_status, "complete");
   assert.equal(state.import_created, 2);
 });
+
+test("invalid winners are not queued through updates or manual controls", async () => {
+  const id = await linked();
+  const response = await request(`/participants/${id}`, "PUT", {
+    prize: "Laptop",
+    babak: 1,
+    is_invalid: true,
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await db("doorprize_outbox")).length, 0);
+  assert.equal((await control("queue")).status, 200);
+  assert.equal((await db("doorprize_outbox")).length, 0);
+  const restored = await request(`/participants/${id}`, "PUT", {
+    is_invalid: false,
+  });
+  assert.equal(restored.status, 200);
+  assert.equal((await db("doorprize_outbox")).length, 1);
+});

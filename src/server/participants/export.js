@@ -28,10 +28,13 @@ export async function exportParticipants({ db, user, url, method }) {
     );
   const { workbook, sheet } = createParticipantWorkbook();
   for (const record of records) {
-    const row = sheet.addRow(record);
+    const row = sheet.addRow({
+      ...record,
+      is_invalid: Boolean(record.is_invalid),
+    });
     row.alignment = { vertical: "top", wrapText: true };
   }
-  sheet.autoFilter = `A1:N${Math.max(1, sheet.rowCount)}`;
+  sheet.autoFilter = `A1:O${Math.max(1, sheet.rowCount)}`;
   return workbookResponse(
     await workbook.xlsx.writeBuffer(),
     "participants.xlsx",

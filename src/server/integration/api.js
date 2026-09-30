@@ -42,6 +42,7 @@ export async function integrationApi({ db, user, request, method, action }) {
         .leftJoin("doorprize_links as l", "l.participant_id", "p.id")
         .whereNull("p.deleted_at")
         .whereNotNull("p.prize")
+        .where("p.is_invalid", false)
         .whereNull("l.participant_id")
         .count({ count: "*" })
         .first(),
@@ -122,6 +123,7 @@ export async function integrationApi({ db, user, request, method, action }) {
         .join("doorprize_links as l", "l.participant_id", "p.id")
         .whereNull("p.deleted_at")
         .whereNotNull("p.prize")
+        .where("p.is_invalid", false)
         .whereNull("l.last_prize")
         .orderBy("p.id")
         .limit(100)

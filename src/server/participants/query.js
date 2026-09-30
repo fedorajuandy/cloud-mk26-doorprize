@@ -12,6 +12,7 @@ const filterSchema = z.object({
   page: integer(1000000).default(1),
   limit: integer(100).default(20),
   deleted: flag.default(false),
+  is_invalid: z.enum(["true", "false", "all"]).default("false"),
   search: z.string().trim().max(255).default(""),
   without_prize: flag.default(false),
   line: z.string().trim().min(1).max(255).optional(),
@@ -49,6 +50,8 @@ export function participantQuery(db, filters) {
   filters.deleted
     ? query.whereNotNull("deleted_at")
     : query.whereNull("deleted_at");
+  if (filters.is_invalid !== "all")
+    query.where("is_invalid", filters.is_invalid === "true");
   if (filters.search)
     query.where((group) => {
       for (const column of [

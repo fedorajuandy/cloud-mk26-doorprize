@@ -6,6 +6,7 @@ const nullable = (max) =>
 export const participant = z
   .object({
     unique_id: text(255),
+    is_invalid: z.boolean().optional(),
     line: nullable(255).optional(),
     status: nullable(100).optional(),
     registered_at: participantDate.optional(),

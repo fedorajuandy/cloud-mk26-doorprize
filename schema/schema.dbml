@@ -88,6 +88,7 @@ Table "participants" {
   "status" varchar(100) [default: null]
   "registered_at" varchar(24) [default: null, note: "Canonical ISO 8601 UTC"]
   "verified_at" varchar(24) [default: null, note: "Canonical ISO 8601 UTC"]
+  "is_invalid" bool [not null, default: false] // if true, then not the winner
 
   "created_at" timestamp [not null, default: `now()`]
   "updated_at" timestamp [default: null]
@@ -95,6 +96,9 @@ Table "participants" {
 
   Indexes {
     "created_at" [name: 'idx_user_data_created_at']
+    (deleted_at, is_invalid, id) [name: 'idx_participants_valid_page']
+    (deleted_at, is_invalid, babak, id) [name: 'idx_participants_valid_round']
+    (deleted_at, is_invalid, sesi, babak, id) [name: 'idx_participants_valid_session_round']
     (deleted_at, id) [name: 'idx_participants_status_id']
     (deleted_at, babak, id) [name: 'idx_participants_status_round_id']
     (deleted_at, line, id) [name: 'idx_participants_line_page']

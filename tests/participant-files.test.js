@@ -27,6 +27,7 @@ const headers = [
   "status",
   "registered_at",
   "verified_at",
+  "is_invalid",
 ];
 before(async () => {
   fixture = await testDatabase();
@@ -1083,4 +1084,56 @@ test("source spreadsheet headers map registration data, preserve identifiers and
       .registered_at,
     "2026-09-30T00:00:00.000Z",
   );
+});
+
+test("invalid winners are excluded by default and share list/export filters", async () => {
+  const inserted = await rawUpload(
+    "unique_id,full_name,nip,unit_kerja,prize,babak,sesi,is_invalid\nvalid,Ayu,001,HQ,Laptop,1,2,false\ninvalid,Budi,002,HQ,Laptop,1,2,true",
+  );
+  assert.equal(inserted.status, 201);
+  const normal = await (
+    await request("/participants?prize=Laptop&babak=1&sesi=2")
+  ).json();
+  assert.deepEqual(
+    normal.data.records.map((r) => r.unique_id),
+    ["valid"],
+  );
+  const invalid = await (
+    await request("/participants?is_invalid=true&prize=Laptop")
+  ).json();
+  assert.deepEqual(
+    invalid.data.records.map((r) => r.unique_id),
+    ["invalid"],
+  );
+  const id = invalid.data.records[0].id;
+  const workbook = new ExcelJS.Workbook();
+  const exported = await request(
+    "/participants/export?is_invalid=true&prize=Laptop",
+  );
+  await workbook.xlsx.load(Buffer.from(await exported.arrayBuffer()));
+  assert.equal(workbook.worksheets[0].rowCount, 2);
+  assert.equal(workbook.worksheets[0].getCell("J2").value, "invalid");
+  assert.equal(workbook.worksheets[0].getCell("O2").value, true);
+  const patch = await request("/participants/batch", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ updates: [{ id, is_invalid: false }] }),
+  });
+  assert.equal(patch.status, 200);
+  assert.equal(
+    (await (await request("/participants?prize=Laptop")).json()).data.pagination
+      .total,
+    2,
+  );
+  assert.equal(
+    (await db("participants").where({ id }).first()).prize,
+    "Laptop",
+  );
+  const bad = await request("/participants/batch", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ updates: [{ id, is_invalid: "false" }] }),
+  });
+  assert.equal(bad.status, 422);
+  assert.equal((await request("/participants?is_invalid=oops")).status, 422);
 });

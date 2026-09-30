@@ -2,6 +2,16 @@ import { Show } from "solid-js";
 import { useAdmin } from "../../components/AdminLayout.jsx";
 import CrudTable from "../../components/CrudTable.jsx";
 const fields = [
+  {
+    key: "is_invalid",
+    label: "Invalid winner",
+    type: "select",
+    boolean: true,
+    options: [
+      { value: 0, label: "No" },
+      { value: 1, label: "Yes — absent/disqualified" },
+    ],
+  },
   { key: "unique_id", label: "Unique ID", required: true, max: 255 },
   { key: "full_name", label: "Full name", required: true, max: 255 },
   { key: "nip", label: "NIP", required: true, max: 255 },
@@ -39,6 +49,7 @@ export default function Participants() {
         fields={fields}
         columns={[
           "unique_id",
+          "is_invalid",
           "full_name",
           "nip",
           "unit_kerja",

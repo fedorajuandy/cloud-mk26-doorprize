@@ -8,6 +8,7 @@ import { validateWorkbookArchive } from "./archive.js";
 const MAX_FILE = 5 * 1024 * 1024;
 const MAX_ROWS = 5000;
 const fields = [
+  "is_invalid",
   "unique_id",
   "line",
   "status",
@@ -24,6 +25,7 @@ const fields = [
   "profile_picture",
 ];
 const aliases = {
+  is_invalid: "is_invalid",
   unique_id: "unique_id",
   kode: "unique_id",
   telepon: "no_hp",
@@ -85,6 +87,7 @@ function cellText(cell, key) {
     return value.toISOString();
   }
   if (value == null) return "";
+  if (key === "is_invalid" && typeof value === "boolean") return String(value);
   if (typeof value === "string") return value;
   if (typeof value === "number") {
     if (["unique_id", "nip", "no_hp"].includes(key)) {
@@ -233,13 +236,19 @@ export async function importParticipants({ db, user, request, method }) {
         if (!key && value) throw new Error("A populated column has no header.");
         if (fields.includes(key))
           record[key] =
-            key === "babak" || key === "sesi"
-              ? value === ""
-                ? null
-                : /^\d+$/.test(value)
-                  ? Number(value)
+            key === "is_invalid"
+              ? ["", "false", "0"].includes(value.toLowerCase())
+                ? false
+                : ["true", "1"].includes(value.toLowerCase())
+                  ? true
                   : value
-              : value || null;
+              : key === "babak" || key === "sesi"
+                ? value === ""
+                  ? null
+                  : /^\d+$/.test(value)
+                    ? Number(value)
+                    : value
+                : value || null;
       } catch (error) {
         rowInvalid = true;
         if (errors.length < 50)
@@ -265,6 +274,7 @@ export async function importParticipants({ db, user, request, method }) {
     if (rowInvalid) invalidRows++;
     else
       records.push({
+        is_invalid: false,
         line: null,
         status: null,
         registered_at: null,

@@ -23,6 +23,7 @@ export default function CrudTable(props) {
     [total, setTotal] = createSignal(0);
   const [search, setSearch] = createSignal(""),
     [deleted, setDeleted] = createSignal(false),
+    [invalid, setInvalid] = createSignal(false),
     [start, setStart] = createSignal(""),
     [end, setEnd] = createSignal(""),
     [session, setSession] = createSignal(""),
@@ -51,6 +52,8 @@ export default function CrudTable(props) {
       search: search(),
       deleted: String(deleted()),
     });
+    if (props.participants)
+      params.set("is_invalid", deleted() ? "all" : String(invalid()));
     if (start()) params.set("start_date", start());
     if (end()) params.set("end_date", end());
     if (line().trim()) params.set("line", line().trim());
@@ -94,6 +97,7 @@ export default function CrudTable(props) {
     search();
     page();
     deleted();
+    invalid();
     start();
     end();
     round();
@@ -136,8 +140,9 @@ export default function CrudTable(props) {
     for (const f of props.fields) {
       const value = row[f.key];
       if (f.type === "password" && row.id && !value) continue;
-      data[f.key] =
-        f.type === "number" || f.type === "select"
+      data[f.key] = f.boolean
+        ? Boolean(Number(value))
+        : f.type === "number" || f.type === "select"
           ? value === "" || value == null
             ? null
             : Number(value)
@@ -298,7 +303,9 @@ export default function CrudTable(props) {
         <div class="table-toolbar">
           <div>
             <strong>
-              {deleted() ? "Archived" : "All"} {props.title.toLowerCase()}
+              {invalid() && !deleted()
+                ? "Invalid winners"
+                : `${deleted() ? "Archived" : "All"} ${props.title.toLowerCase()}`}
             </strong>
             <span class="count">{total()}</span>
           </div>
@@ -317,14 +324,18 @@ export default function CrudTable(props) {
             </label>
             <select
               aria-label="Record status"
-              value={String(deleted())}
+              value={invalid() && !deleted() ? "invalid" : String(deleted())}
               onChange={(e) => {
                 setDeleted(e.currentTarget.value === "true");
+                setInvalid(e.currentTarget.value === "invalid");
                 setPage(1);
               }}
             >
               <option value="false">Active records</option>
               <option value="true">Archived records</option>
+              <Show when={props.participants}>
+                <option value="invalid">Invalid winners</option>
+              </Show>
             </select>
             <button class="secondary" onClick={refresh} disabled={loading()}>
               Refresh
@@ -706,6 +717,7 @@ export default function CrudTable(props) {
                       }
                     >
                       <select
+                        aria-label={field.label}
                         value={editing()?.[field.key] ?? ""}
                         onChange={(e) =>
                           setEditing((v) => ({

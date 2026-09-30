@@ -55,7 +55,7 @@ export default function ImportParticipants(props) {
           <code>no_hp</code>, <code>prize</code>, <code>babak</code>,{" "}
           <code>sesi</code>, <code>email</code>, <code>profile_picture</code>,{" "}
           <code>line</code>, <code>status</code>, <code>registered_at</code>,{" "}
-          <code>verified_at</code>.
+          <code>verified_at, is_invalid</code>.
         </p>
         <p class="muted">
           Source spreadsheet headers are also accepted: Kode, Nama, NIP,

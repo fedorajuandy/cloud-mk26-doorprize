@@ -3,6 +3,7 @@ const columns = {
   participants: [
     "id",
     "unique_id",
+    "is_invalid",
     "line",
     "status",
     "registered_at",

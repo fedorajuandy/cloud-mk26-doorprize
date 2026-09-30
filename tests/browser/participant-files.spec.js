@@ -255,15 +255,13 @@ test("source CSV headers import into admin and registration filters work", async
   await page
     .getByRole("button", { name: "Import participants", exact: true })
     .click();
-  await page
-    .getByLabel("Participant file")
-    .setInputFiles({
-      name: "source.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.from(
-        "Kode,Nama,NIP,Telepon,Unit kerja,Line,Status,Registrasi UTC,Verifikasi UTC\nsource-browser,Ayu Source,001,08123,Finance,A,Verified,2026-09-30 08:00:00,",
-      ),
-    });
+  await page.getByLabel("Participant file").setInputFiles({
+    name: "source.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(
+      "Kode,Nama,NIP,Telepon,Unit kerja,Line,Status,Registrasi UTC,Verifikasi UTC\nsource-browser,Ayu Source,001,08123,Finance,A,Verified,2026-09-30 08:00:00,",
+    ),
+  });
   await page.getByRole("button", { name: "Import file", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByLabel("Line filter", { exact: true }).fill("A");
@@ -276,14 +274,34 @@ test("source CSV headers import into admin and registration filters work", async
   await expect(
     page.getByRole("cell", { name: "2026-09-30T08:00:00.000Z", exact: true }),
   ).toBeVisible();
-  const row = page
-    .getByRole("row")
-    .filter({
-      has: page.getByRole("cell", { name: "Ayu Source", exact: true }),
-    });
+  const row = page.getByRole("row").filter({
+    has: page.getByRole("cell", { name: "Ayu Source", exact: true }),
+  });
   await row.getByRole("button", { name: "Edit", exact: true }).click();
   await expect(
     page.getByRole("dialog").getByLabel("Registration status", { exact: true }),
   ).toHaveValue("Verified");
-  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Invalid winner", { exact: true })
+    .selectOption("1");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("cell", { name: "Ayu Source", exact: true }),
+  ).toHaveCount(0);
+  await page.getByLabel("Record status").selectOption("invalid");
+  await expect(
+    page.getByRole("cell", { name: "Ayu Source", exact: true }),
+  ).toBeVisible();
+  await row.getByRole("button", { name: "Edit", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Invalid winner", { exact: true })
+    .selectOption("0");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("cell", { name: "Ayu Source", exact: true }),
+  ).toHaveCount(0);
 });

@@ -16,6 +16,7 @@ export const participantColumns = [
   { header: "status", key: "status", width: 24 },
   { header: "registered_at", key: "registered_at", width: 28 },
   { header: "verified_at", key: "verified_at", width: 28 },
+  { header: "is_invalid", key: "is_invalid", width: 16 },
 ];
 export function createParticipantWorkbook() {
   const workbook = new ExcelJS.Workbook();
@@ -48,7 +49,7 @@ export function createParticipantWorkbook() {
     fgColor: { argb: "FF2866D5" },
   };
   header.alignment = { vertical: "middle" };
-  sheet.autoFilter = "A1:N1";
+  sheet.autoFilter = "A1:O1";
   return { workbook, sheet };
 }
 export function workbookResponse(buffer, filename) {

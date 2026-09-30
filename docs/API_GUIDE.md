@@ -298,7 +298,7 @@ Content-Disposition: attachment; filename="participants.xlsx"
 Cache-Control: no-store
 ```
 
-The workbook contains the fourteen participant input fields in the same order as the import template. Numeric database IDs and audit timestamps are omitted; `unique_id` is included. NIP/phone values are exported as Excel text, blank prizes remain blank, and strings beginning with `=` are written as text rather than executable formulas. The header is frozen, columns have readable widths, and Excel filtering is enabled. Exported files can be imported again, subject to the import limits; this requires unique IDs not already present in the target database.
+The workbook contains the fifteen participant input fields in the same order as the import template. Numeric database IDs and audit timestamps are omitted; `unique_id` is included. NIP/phone values are exported as Excel text, blank prizes remain blank, and strings beginning with `=` are written as text rather than executable formulas. The header is frozen, columns have readable widths, and Excel filtering is enabled. Exported files can be imported again, subject to the import limits; this requires unique IDs not already present in the target database.
 
 ## Admin/system endpoints
 
@@ -450,3 +450,15 @@ The source CSV headers map as follows (CSV and XLSX both supported):
 `status` is the source registration status, independent of CMS `deleted_at`/archive state. No enum is imposed because the supplied sample contains headers only. Both registration timestamps are separate from CMS-created/updated timestamps. They accept ISO 8601 timestamps with offsets, or `YYYY-MM-DD HH:mm:ss[.SSS]` interpreted as UTC; supported Excel date cells also work. Values normalize to `YYYY-MM-DDTHH:mm:ss.sssZ` and are stored/exported as text consistently across MySQL and SQLite. Blank optional values become null; malformed dates reject the entire import. Canonical English import headers continue to work.
 
 CRUD/batch APIs accept the four new optional fields; omission preserves them on updates. Source HTTP synchronization (which only returns ID/NIP) and dummy seeding leave them null for new rows. Resetting draw results preserves them. List/export filters accept exact `line` and `status`, combined with existing filters. Search includes both text fields and sorting supports all four fields. New indexes `(deleted_at, line, id)` and `(deleted_at, status, id)` support these filtered pages. Templates and Excel exports append `line`, `status`, `registered_at`, `verified_at` as columns K–N; earlier columns retain their positions.
+
+## Invalid winners
+
+Participants have `is_invalid` (non-null boolean, default `false`). Set it with participant create/update or `PATCH /api/participants/batch`, for example `{"updates":[{"id":123,"is_invalid":true}]}`. Omitted values remain unchanged on updates. Invalidating retains the prize, babak, sesi, and participant details; set `false` to restore eligibility.
+
+List and Excel export default to `is_invalid=false`, excluding absent/disqualified participants from valid winner results and draw candidates. Use `is_invalid=true` to review invalid records, or `is_invalid=all` for both. This combines with prize, babak, sesi, search, archive, registration, pagination, and sorting filters. `deleted` remains independent. The admin Record status selector includes **Invalid winners**; Archived records includes both validity states. Edit **Invalid winner** to mark or restore a record.
+
+Excel export uses the same filters and sorting as the table. `scope=all` exports all matching rows (maximum 10,000); `scope=page` exports the current page. The appended `is_invalid` column supports round-trip import: CSV accepts `true`/`false` or `1`/`0`, XLSX also accepts boolean cells, and blank/omitted defaults to false. JSON APIs require actual booleans. Dummy and source-created participants default to false.
+
+Resetting prize/babak/sesi preserves the invalid flag, so disqualified participants remain excluded until explicitly restored. Invalid participants are excluded from newly queued source awards and unmapped-winner counts. Existing queued or published awards are not revoked by invalidation; corrections to those awards must be handled on the source site.
+
+Deploy migration `010_participant_invalid.js` with `npm run db:migrate`. Existing participants become valid by default. Composite indexes cover archive/validity pagination and babak/sesi filtering.
