@@ -23,6 +23,10 @@ const headers = [
   "email",
   "profile_picture",
   "unique_id",
+  "line",
+  "status",
+  "registered_at",
+  "verified_at",
 ];
 before(async () => {
   fixture = await testDatabase();
@@ -993,5 +997,90 @@ test("unique_id is required, imported as text, unique across archives and preser
   assert.equal(
     (await create({ ...input, unique_id: imported.unique_id })).status,
     409,
+  );
+});
+
+test("source spreadsheet headers map registration data, preserve identifiers and normalize UTC dates", async () => {
+  const source =
+    "Kode,Nama,NIP,Telepon,Unit kerja,Line,Status,Registrasi UTC,Verifikasi UTC\n00000001,Ayu,000123,081234,Finance,A,Verified,2026-09-30 08:15:00,2026-09-30T16:00:00+07:00\n00000002,Budi,000456,,Operations,B,Pending,,";
+  const response = await rawUpload(source);
+  assert.equal(response.status, 201, await response.clone().text());
+  const first = await db("participants")
+    .where({ unique_id: "00000001" })
+    .first();
+  assert.equal(first.full_name, "Ayu");
+  assert.equal(first.nip, "000123");
+  assert.equal(first.no_hp, "081234");
+  assert.equal(first.line, "A");
+  assert.equal(first.status, "Verified");
+  assert.equal(first.registered_at, "2026-09-30T08:15:00.000Z");
+  assert.equal(first.verified_at, "2026-09-30T09:00:00.000Z");
+  assert.equal(first.deleted_at, null);
+  const second = await db("participants")
+    .where({ unique_id: "00000002" })
+    .first();
+  assert.equal(second.verified_at, null);
+  assert.equal(second.registered_at, null);
+  assert.equal(
+    (await rows("/participants?line=A&status=Verified")).pagination.total,
+    1,
+  );
+  assert.equal(
+    (await rows("/participants?line=A&status=Pending")).pagination.total,
+    0,
+  );
+  assert.equal(
+    (await batchUpdate([{ id: first.id, prize: "Laptop", babak: 2 }])).status,
+    200,
+  );
+  assert.equal(
+    (await db("participants").where({ id: first.id }).first()).registered_at,
+    first.registered_at,
+  );
+  const sheet = await readWorkbook(
+    await request(
+      "/participants/export?line=A&status=Verified&sort_by=registered_at&sort_order=asc",
+    ),
+  );
+  assert.equal(sheet.getCell("K2").value, "A");
+  assert.equal(sheet.getCell("L2").value, "Verified");
+  assert.equal(sheet.getCell("M2").value, first.registered_at);
+  assert.equal(sheet.getCell("N2").value, first.verified_at);
+  for (const value of ["tomorrow", "2026-02-30T12:00:00Z"])
+    assert.equal(
+      (
+        await rawUpload(
+          `Kode,Nama,NIP,Unit kerja,Registrasi UTC\ninvalid,Ayu,001,Finance,${value}`,
+        )
+      ).status,
+      422,
+    );
+  assert.equal((await rows()).pagination.total, 2);
+  const book = new ExcelJS.Workbook(),
+    excel = book.addWorksheet("Participants");
+  excel.addRow([
+    "Kode",
+    "Nama",
+    "NIP",
+    "Unit kerja",
+    "Registrasi UTC",
+    "Verifikasi UTC",
+  ]);
+  excel.addRow([
+    "excel-date",
+    "Excel",
+    "001",
+    "Finance",
+    new Date("2026-09-30T00:00:00Z"),
+    null,
+  ]);
+  assert.equal(
+    (await rawUpload(await book.xlsx.writeBuffer(), "source.xlsx")).status,
+    201,
+  );
+  assert.equal(
+    (await db("participants").where({ unique_id: "excel-date" }).first())
+      .registered_at,
+    "2026-09-30T00:00:00.000Z",
   );
 });

@@ -9,6 +9,10 @@ const MAX_FILE = 5 * 1024 * 1024;
 const MAX_ROWS = 5000;
 const fields = [
   "unique_id",
+  "line",
+  "status",
+  "registered_at",
+  "verified_at",
   "full_name",
   "nip",
   "unit_kerja",
@@ -21,6 +25,14 @@ const fields = [
 ];
 const aliases = {
   unique_id: "unique_id",
+  kode: "unique_id",
+  telepon: "no_hp",
+  line: "line",
+  status: "status",
+  registered_at: "registered_at",
+  registrasi_utc: "registered_at",
+  verified_at: "verified_at",
+  verifikasi_utc: "verified_at",
   full_name: "full_name",
   nama: "full_name",
   nama_lengkap: "full_name",
@@ -67,6 +79,11 @@ function headers(values) {
 }
 function cellText(cell, key) {
   const value = cell?.value;
+  if (value instanceof Date && ["registered_at", "verified_at"].includes(key)) {
+    if (!Number.isFinite(value.getTime()))
+      throw new Error("Invalid Excel date.");
+    return value.toISOString();
+  }
   if (value == null) return "";
   if (typeof value === "string") return value;
   if (typeof value === "number") {
@@ -248,6 +265,10 @@ export async function importParticipants({ db, user, request, method }) {
     if (rowInvalid) invalidRows++;
     else
       records.push({
+        line: null,
+        status: null,
+        registered_at: null,
+        verified_at: null,
         no_hp: null,
         prize: null,
         babak: null,

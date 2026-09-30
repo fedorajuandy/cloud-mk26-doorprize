@@ -14,6 +14,8 @@ const filterSchema = z.object({
   deleted: flag.default(false),
   search: z.string().trim().max(255).default(""),
   without_prize: flag.default(false),
+  line: z.string().trim().min(1).max(255).optional(),
+  status: z.string().trim().min(1).max(100).optional(),
   prize: z.string().trim().min(1).max(16000).optional(),
   babak: z
     .string()
@@ -51,6 +53,8 @@ export function participantQuery(db, filters) {
     query.where((group) => {
       for (const column of [
         "unique_id",
+        "line",
+        "status",
         "full_name",
         "nip",
         "unit_kerja",
@@ -60,6 +64,8 @@ export function participantQuery(db, filters) {
       ])
         group.orWhere(column, "like", `%${filters.search}%`);
     });
+  if (filters.line !== undefined) query.where("line", filters.line);
+  if (filters.status !== undefined) query.where("status", filters.status);
   if (filters.without_prize) query.whereNull("prize");
   if (filters.prize !== undefined) query.where("prize", filters.prize);
   if (filters.sesi !== undefined) query.where("sesi", filters.sesi);

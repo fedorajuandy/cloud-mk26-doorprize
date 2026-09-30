@@ -180,3 +180,5 @@ Run `npm run db:migrate` for nullable participant `email` and `profile_picture` 
 ## Source-site doorprize integration
 
 See [deployment and operation](docs/DOORPRIZE-SETUP.md) and the [source API contract](docs/DOORPRIZE-INTEGRATION.md). Configure server-only `DOORPRIZE_SOURCE_URL`/`DOORPRIZE_SOURCE_TOKEN`, migrate, and run `npm run integration:worker` as a persistent second process. Super Admin controls are under **Doorprize integration (left sidebar, below Participants)**. Participant syncing, automatic winner delivery, persistent retries, and delivery status use server-to-server HTTP; the source site notifies its participants in real time. The integration starts disabled and defaults to linking existing participants by NIP.
+
+Source spreadsheet import accepts `Kode,Nama,NIP,Telepon,Unit kerja,Line,Status,Registrasi UTC,Verifikasi UTC`. Run `npm run db:migrate` for the optional registration fields. See the API guide's source-spreadsheet mapping; registration Status is distinct from active/archived state. The supplied header-only file must have data rows added before import.

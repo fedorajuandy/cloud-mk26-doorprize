@@ -207,7 +207,7 @@ curl --fail-with-body -b "$COOKIE_JAR" \
 
 Required headers: `unique_id`, `full_name`, `nip`, `unit_kerja`.
 
-Optional headers: `no_hp`, `prize`, `babak`, `sesi`, `email`, `profile_picture`.
+Optional headers: `no_hp`, `prize`, `babak`, `sesi`, `email`, `profile_picture`, `line`, `status`, `registered_at`, `verified_at`.
 
 Headers are case-insensitive and spaces/hyphens normalize to underscores, so `Full name`, `Unit kerja`, and `Phone number` work. Additional aliases: `nama`/`nama_lengkap` → `full_name`, `phone_number` → `no_hp`, `hadiah` → `prize`, `round` → `babak`, `session` → `sesi`. `id`, `created_at`, `updated_at`, and `deleted_at` columns are ignored if present. Other unknown or duplicate columns are rejected.
 
@@ -298,7 +298,7 @@ Content-Disposition: attachment; filename="participants.xlsx"
 Cache-Control: no-store
 ```
 
-The workbook contains the ten participant input fields in the same order as the import template. Numeric database IDs and audit timestamps are omitted; `unique_id` is included. NIP/phone values are exported as Excel text, blank prizes remain blank, and strings beginning with `=` are written as text rather than executable formulas. The header is frozen, columns have readable widths, and Excel filtering is enabled. Exported files can be imported again, subject to the import limits; this requires unique IDs not already present in the target database.
+The workbook contains the fourteen participant input fields in the same order as the import template. Numeric database IDs and audit timestamps are omitted; `unique_id` is included. NIP/phone values are exported as Excel text, blank prizes remain blank, and strings beginning with `=` are written as text rather than executable formulas. The header is frozen, columns have readable widths, and Excel filtering is enabled. Exported files can be imported again, subject to the import limits; this requires unique IDs not already present in the target database.
 
 ## Admin/system endpoints
 
@@ -388,7 +388,7 @@ Returns `200` with `{"data":{"updated":2800}}`, counting rows whose results chan
 
 ## Sorting lists and exports
 
-List routes support `sort_by` and `sort_order=asc|desc` (defaults: `id`, `desc`). Participant sort fields: `id`, `unique_id`, `full_name`, `nip`, `unit_kerja`, `no_hp`, `email`, `profile_picture`, `prize`, `sesi`, `babak`, `created_at`, `updated_at`. Other lists allow `id` plus `username`/`role_id` for users, `role_name` for roles, or `permission_name` for permissions. User `role_id` sorts by the displayed role name. Unsupported fields or directions return `422`.
+List routes support `sort_by` and `sort_order=asc|desc` (defaults: `id`, `desc`). Participant sort fields: `id`, `unique_id`, `full_name`, `nip`, `unit_kerja`, `no_hp`, `email`, `profile_picture`, `line`, `status`, `registered_at`, `verified_at`, `prize`, `sesi`, `babak`, `created_at`, `updated_at`. Other lists allow `id` plus `username`/`role_id` for users, `role_name` for roles, or `permission_name` for permissions. User `role_id` sorts by the displayed role name. Unsupported fields or directions return `422`.
 
 Sorting happens before pagination. Ties use descending ID for stable page boundaries. Numeric fields sort numerically; NIP and phone remain text. Nulls follow database ordering (first ascending, last descending on supported MySQL/SQLite). Participant exports accept the same sort parameters, including current-page exports. Example: `/api/participants?sesi=1&sort_by=full_name&sort_order=asc&page=1&limit=100`.
 
@@ -430,3 +430,23 @@ Settings include nullable `login_bg_image` (maximum 2,048 characters), accepting
 ## Source-site synchronization
 
 See [Doorprize integration setup](DOORPRIZE-SETUP.md) for control routes and deployment. Existing single/batch winner updates atomically queue source publication when enabled and linked; API success confirms local persistence, not remote acknowledgment. The source provides only ID/NIP, and accepts awards rather than mutable participant prize fields. Local reset/purge does not revoke queued or published source awards. Source credentials are backend-only and separate from roulette browser authentication.
+
+## Source registration spreadsheet
+
+The source CSV headers map as follows (CSV and XLSX both supported):
+
+| Source header  | Participant API/database field                               |
+| -------------- | ------------------------------------------------------------ |
+| Kode           | `unique_id` (required, unique text; preserves leading zeros) |
+| Nama           | `full_name` (required)                                       |
+| NIP            | `nip` (required text)                                        |
+| Telepon        | `no_hp` (optional text)                                      |
+| Unit kerja     | `unit_kerja` (required)                                      |
+| Line           | `line` (optional text, max 255)                              |
+| Status         | `status` (optional text, max 100)                            |
+| Registrasi UTC | `registered_at` (optional UTC timestamp)                     |
+| Verifikasi UTC | `verified_at` (optional UTC timestamp)                       |
+
+`status` is the source registration status, independent of CMS `deleted_at`/archive state. No enum is imposed because the supplied sample contains headers only. Both registration timestamps are separate from CMS-created/updated timestamps. They accept ISO 8601 timestamps with offsets, or `YYYY-MM-DD HH:mm:ss[.SSS]` interpreted as UTC; supported Excel date cells also work. Values normalize to `YYYY-MM-DDTHH:mm:ss.sssZ` and are stored/exported as text consistently across MySQL and SQLite. Blank optional values become null; malformed dates reject the entire import. Canonical English import headers continue to work.
+
+CRUD/batch APIs accept the four new optional fields; omission preserves them on updates. Source HTTP synchronization (which only returns ID/NIP) and dummy seeding leave them null for new rows. Resetting draw results preserves them. List/export filters accept exact `line` and `status`, combined with existing filters. Search includes both text fields and sorting supports all four fields. New indexes `(deleted_at, line, id)` and `(deleted_at, status, id)` support these filtered pages. Templates and Excel exports append `line`, `status`, `registered_at`, `verified_at` as columns K–N; earlier columns retain their positions.

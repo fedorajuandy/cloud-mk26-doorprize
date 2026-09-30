@@ -1,3 +1,4 @@
+import { participantDate } from "./participant-dates.js";
 import { z } from "zod";
 const text = (max) => z.string().trim().min(1).max(max);
 const nullable = (max) =>
@@ -5,6 +6,10 @@ const nullable = (max) =>
 export const participant = z
   .object({
     unique_id: text(255),
+    line: nullable(255).optional(),
+    status: nullable(100).optional(),
+    registered_at: participantDate.optional(),
+    verified_at: participantDate.optional(),
     full_name: text(255),
     no_hp: nullable(20).optional(),
     email: nullable(255)

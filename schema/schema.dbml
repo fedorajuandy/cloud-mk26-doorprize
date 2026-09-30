@@ -84,6 +84,10 @@ Table "participants" {
   "sesi" uint(2) [default: null]
   "babak" uint(2) [default: null]
   "profile_picture" text [default: null]
+  "line" varchar(255) [default: null]
+  "status" varchar(100) [default: null]
+  "registered_at" varchar(24) [default: null, note: "Canonical ISO 8601 UTC"]
+  "verified_at" varchar(24) [default: null, note: "Canonical ISO 8601 UTC"]
 
   "created_at" timestamp [not null, default: `now()`]
   "updated_at" timestamp [default: null]
@@ -93,6 +97,8 @@ Table "participants" {
     "created_at" [name: 'idx_user_data_created_at']
     (deleted_at, id) [name: 'idx_participants_status_id']
     (deleted_at, babak, id) [name: 'idx_participants_status_round_id']
+    (deleted_at, line, id) [name: 'idx_participants_line_page']
+    (deleted_at, status, id) [name: 'idx_participants_status_page']
     (deleted_at, sesi, id) [name: 'idx_participants_status_session_id']
     (deleted_at, sesi, babak, id) [name: 'idx_participants_status_session_round_id']
   }

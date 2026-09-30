@@ -26,6 +26,8 @@ export default function CrudTable(props) {
     [start, setStart] = createSignal(""),
     [end, setEnd] = createSignal(""),
     [session, setSession] = createSignal(""),
+    [line, setLine] = createSignal(""),
+    [registrationStatus, setRegistrationStatus] = createSignal(""),
     [round, setRound] = createSignal(""),
     [prizeMode, setPrizeMode] = createSignal("all"),
     [prize, setPrize] = createSignal(""),
@@ -51,6 +53,9 @@ export default function CrudTable(props) {
     });
     if (start()) params.set("start_date", start());
     if (end()) params.set("end_date", end());
+    if (line().trim()) params.set("line", line().trim());
+    if (registrationStatus().trim())
+      params.set("status", registrationStatus().trim());
     if (session() !== "") params.set("sesi", session());
     if (round() !== "") params.set("babak", round());
     if (prizeMode() === "none") params.set("without_prize", "true");
@@ -93,6 +98,8 @@ export default function CrudTable(props) {
     end();
     round();
     session();
+    line();
+    registrationStatus();
     prizeMode();
     prize();
     limit();
@@ -220,6 +227,8 @@ export default function CrudTable(props) {
           done={(count) => {
             setSeeding(false);
             setNotice(`${count.toLocaleString()} dummy participants added.`);
+            setLine("");
+            setRegistrationStatus("");
             setSearch("");
             setDeleted(false);
             setStart("");
@@ -376,6 +385,26 @@ export default function CrudTable(props) {
               </label>
             </Show>
             <label>
+              Line filter
+              <input
+                value={line()}
+                onInput={(e) => {
+                  setLine(e.currentTarget.value);
+                  setPage(1);
+                }}
+              />
+            </label>
+            <label>
+              Registration status filter
+              <input
+                value={registrationStatus()}
+                onInput={(e) => {
+                  setRegistrationStatus(e.currentTarget.value);
+                  setPage(1);
+                }}
+              />
+            </label>
+            <label>
               Sesi
               <input
                 type="number"
@@ -405,6 +434,8 @@ export default function CrudTable(props) {
             <button
               class="text-button"
               onClick={() => {
+                setLine("");
+                setRegistrationStatus("");
                 setSearch("");
                 setStart("");
                 setEnd("");

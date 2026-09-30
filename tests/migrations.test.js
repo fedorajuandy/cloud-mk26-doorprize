@@ -35,7 +35,7 @@ test("adopts existing admin tables without replaying unrelated migration history
     });
     const history = await db("knex_migrations");
     const [, applied] = await db.migrate.latest();
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, 9);
     assert.ok(await db.schema.hasTable("participants"));
     assert.deepEqual(await db("users").first(), before);
     assert.deepEqual(
@@ -210,6 +210,35 @@ test("unique ID migration backfills UUIDs, preserves records and enforces unique
         unique_id: null,
       }),
     );
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("registration fields migrate existing records without replacing audit timestamps", async () => {
+  const fixture = await testDatabase(),
+    { db } = fixture;
+  try {
+    await up(db);
+    await db("participants").insert({
+      full_name: "Existing",
+      nip: "001",
+      unit_kerja: "Finance",
+    });
+    const before = await db("participants").first();
+    const { up: addRegistration } =
+      await import("../migrations/009_participant_registration.js");
+    await addRegistration(db);
+    assert.deepEqual(await db("participants").first(), {
+      ...before,
+      line: null,
+      status: null,
+      registered_at: null,
+      verified_at: null,
+    });
+    await db("participants").update({ line: "A", status: "Verified" });
+    await addRegistration(db);
+    assert.equal((await db("participants").first()).status, "Verified");
   } finally {
     await fixture.close();
   }

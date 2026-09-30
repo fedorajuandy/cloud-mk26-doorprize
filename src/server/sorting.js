@@ -3,6 +3,10 @@ const columns = {
   participants: [
     "id",
     "unique_id",
+    "line",
+    "status",
+    "registered_at",
+    "verified_at",
     "full_name",
     "nip",
     "unit_kerja",

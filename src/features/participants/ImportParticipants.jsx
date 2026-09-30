@@ -53,7 +53,15 @@ export default function ImportParticipants(props) {
           Required columns: <code>unique_id</code>, <code>full_name</code>,{" "}
           <code>nip</code>, <code>unit_kerja</code>. Optional:{" "}
           <code>no_hp</code>, <code>prize</code>, <code>babak</code>,{" "}
-          <code>sesi</code>, <code>email</code>, <code>profile_picture</code>.
+          <code>sesi</code>, <code>email</code>, <code>profile_picture</code>,{" "}
+          <code>line</code>, <code>status</code>, <code>registered_at</code>,{" "}
+          <code>verified_at</code>.
+        </p>
+        <p class="muted">
+          Source spreadsheet headers are also accepted: Kode, Nama, NIP,
+          Telepon, Unit kerja, Line, Status, Registrasi UTC, Verifikasi UTC.
+          Kode must be unique. Blank optional cells become null; unzoned
+          registration/verification times are interpreted as UTC.
         </p>
         <button
           type="button"
