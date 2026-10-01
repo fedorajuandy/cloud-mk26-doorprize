@@ -16,12 +16,14 @@ export async function resetParticipantResults({ db, user, request, method }) {
         query
           .whereNotNull("prize")
           .orWhereNotNull("babak")
-          .orWhereNotNull("sesi"),
+          .orWhereNotNull("sesi")
+          .orWhere("is_invalid", true),
       )
       .update({
         prize: null,
         babak: null,
         sesi: null,
+        is_invalid: false,
         updated_at: trx.fn.now(),
       });
     await trx("doorprize_links")

@@ -382,9 +382,9 @@ CSV/XLSX imports accept optional `sesi` (alias `session`), with blank cells trea
 
 ## Reset all participant results
 
-`POST /api/participants/reset-results` requires a Super Admin session. Send `{"confirmation":"RESET ALL RESULTS"}`. One atomic update sets `prize`, `babak`, and `sesi` to null for **all participants, including archived records**, regardless of filters. Participant details and archive status remain unchanged; changed rows receive a new `updated_at`. Active participants become eligible for draws again.
+`POST /api/participants/reset-results` requires a Super Admin session. Send `{"confirmation":"RESET ALL RESULTS"}`. One atomic update sets `prize`, `babak`, and `sesi` to null and `is_invalid` to false for **all participants, including archived records**, regardless of filters. Participant details and archive status remain unchanged; changed rows receive a new `updated_at`. Active participants become eligible for draws again.
 
-Returns `200` with `{"data":{"updated":2800}}`, counting rows whose results changed. Repeating the reset returns zero if all three fields are already null. Incorrect confirmation returns `422`; non-Super Admins receive `403`. The admin action is **Participants → Reset all results** and requires typing `RESET ALL RESULTS` before confirming.
+Returns `200` with `{"data":{"updated":2800}}`, counting rows whose results changed. Repeating the reset returns zero if prize, babak, and sesi are already null and is_invalid is false. Incorrect confirmation returns `422`; non-Super Admins receive `403`. The admin action is **Participants → Reset all results** and requires typing `RESET ALL RESULTS` before confirming.
 
 ## Sorting lists and exports
 
@@ -459,6 +459,6 @@ List and Excel export default to `is_invalid=false`, excluding absent/disqualifi
 
 Excel export uses the same filters and sorting as the table. `scope=all` exports all matching rows (maximum 10,000); `scope=page` exports the current page. The appended `is_invalid` column supports round-trip import: CSV accepts `true`/`false` or `1`/`0`, XLSX also accepts boolean cells, and blank/omitted defaults to false. JSON APIs require actual booleans. Dummy and source-created participants default to false.
 
-Resetting prize/babak/sesi preserves the invalid flag, so disqualified participants remain excluded until explicitly restored. Invalid participants are excluded from newly queued source awards and unmapped-winner counts. Existing queued or published awards are not revoked by invalidation; corrections to those awards must be handled on the source site.
+Reset all results clears prize/babak/sesi and sets is_invalid to false, making active disqualified participants eligible again. Invalid participants are excluded from newly queued source awards and unmapped-winner counts. Existing queued or published awards are not revoked by invalidation; corrections to those awards must be handled on the source site.
 
 Deploy migration `010_participant_invalid.js` with `npm run db:migrate`. Existing participants become valid by default. Composite indexes cover archive/validity pagination and babak/sesi filtering.

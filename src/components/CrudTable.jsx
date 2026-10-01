@@ -217,6 +217,7 @@ export default function CrudTable(props) {
           done={(count) => {
             setResettingResults(false);
             setNotice(`Results reset for ${count} participants.`);
+            setInvalid(false);
             setRound("");
             setSession("");
             setPrizeMode("all");

@@ -30,11 +30,12 @@ export default function ResetParticipantResults(props) {
     >
       <form onSubmit={reset}>
         <p>
-          This clears prize, babak, and sesi for every participant, including
-          archived records. Current filters do not apply. Participant details
-          and archive status are preserved. Active participants become eligible
-          for the draw again. Previous results cannot be restored by this
-          action. Queued or published source-site awards are not canceled.
+          This clears prize, babak, and sesi and sets is_invalid to false for
+          every participant, including invalid winners and archived records.
+          Current filters do not apply. Participant details and archive status
+          are preserved. Active participants become eligible for the draw again.
+          Previous results cannot be restored by this action. Queued or
+          published source-site awards are not canceled.
         </p>
         <Show when={error()}>
           <p role="alert" class="error">

@@ -707,7 +707,11 @@ test("sesi works across CRUD, batch, combined filters, import and Excel export",
 
 test("reset results clears every result including archives while preserving participant details", async () => {
   await sample();
-  await db("participants").update({ sesi: 2 });
+  await db("participants").update({ sesi: 2, is_invalid: true });
+  const invalidOnly = await db("participants").first();
+  await db("participants")
+    .where({ id: invalidOnly.id })
+    .update({ prize: null, sesi: null, babak: null });
   const before = await db("participants").orderBy("id");
   const reset = (confirmation, auth = cookie, extra = {}) =>
     request(
@@ -738,13 +742,14 @@ test("reset results clears every result including archives while preserving part
   const after = await db("participants").orderBy("id");
   assert.equal(after.length, before.length);
   for (let i = 0; i < after.length; i++) {
-    const { prize, babak, sesi, updated_at, ...details } = after[i];
+    const { prize, babak, sesi, is_invalid, updated_at, ...details } = after[i];
+    assert.equal(Boolean(is_invalid), false);
     assert.equal(prize, null);
     assert.equal(babak, null);
     assert.equal(sesi, null);
     assert.ok(updated_at);
     const original = { ...before[i] };
-    for (const key of ["prize", "babak", "sesi", "updated_at"])
+    for (const key of ["prize", "babak", "sesi", "is_invalid", "updated_at"])
       delete original[key];
     assert.deepEqual(details, original);
   }
