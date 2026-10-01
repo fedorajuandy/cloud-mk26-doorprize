@@ -157,7 +157,7 @@ Framework reference: [SolidStart 2 configuration](https://docs.solidjs.com/solid
 
 ## Optional dummy participants and cleanup
 
-Super Admins can select **Participants → Add dummy participants → Add 2,800 dummy participants**. The table refreshes and clears filters after success. Alternatively, after migration, explicitly run `npm run db:seed:dummy` to append **2,800** dummy participants. They are labeled `Participant 0001` through `2800`, have run-specific NIPs, and start with null prize, sesi, babak, and phone. Inserts are batched in one transaction. This is never run by `db:seed`, migrations, or application startup. Running it again adds another 2,800 records.
+Super Admins can select **Participants → Add dummy participants → Add 2,800 dummy participants**. The table refreshes and clears filters after success. Alternatively, after migration, explicitly run `npm run db:seed:dummy` to append **2,800** dummy participants. They are labeled `Participant 0001` through `2800`, have unused five-digit NIPs (e.g. `00001`), and start with null prize, sesi, babak, and phone. Inserts are batched in one transaction. This is never run by `db:seed`, migrations, or application startup. Running it again adds another 2,800 records.
 
 Super Admins can use **Participants → Delete all participants** and type `DELETE ALL PARTICIPANTS` to permanently remove **all** participants, including archived records, real entries, and winners, regardless of current filters. Admin accounts, roles, permissions, settings, and migration history remain intact. Participant IDs are not reset.
 

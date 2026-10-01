@@ -539,6 +539,7 @@ test("optional dummy seed appends 2800 eligible records and purge removes only p
     ),
   );
   assert.equal(new Set(dummy.map((row) => row.nip)).size, 2800);
+  assert.ok(dummy.every((row) => /^\d{5}$/.test(row.nip)));
   assert.ok(
     dummy.every(
       (row) =>

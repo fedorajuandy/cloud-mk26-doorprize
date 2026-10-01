@@ -366,7 +366,7 @@ The ordinary `DELETE /api/participants/:id` remains a soft delete. The optional 
 
 ## Add dummy participants
 
-`POST /api/participants/seed-dummy` requires a Super Admin session and an empty JSON object `{}`. Returns `201` with `{"data":{"inserted":2800}}` after all inserts commit. This appends 2,800 labeled dummy participants with unique dummy NIPs and null prize/babak/sesi/phone. Existing records remain unchanged. Each request appends another batch; requests are not automatically deduplicated. Unknown fields return `422`, other methods `405`, and non-Super Admins `403`. The normal origin checks apply. The admin UI exposes this under **Participants → Add dummy participants**.
+`POST /api/participants/seed-dummy` requires a Super Admin session and an empty JSON object `{}`. Returns `201` with `{"data":{"inserted":2800}}` after all inserts commit. This appends 2,800 labeled dummy participants with unused five-digit dummy NIPs (`00001`–`99999`) and null prize/babak/sesi/phone. Existing records remain unchanged. Each request appends another batch; requests are not automatically deduplicated. Existing five-digit NIPs, including archived ones, are skipped. If fewer than 2,800 are available, the request returns `409` without inserting records. Unknown fields return `422`, other methods `405`, and non-Super Admins `403`. The normal origin checks apply. The admin UI exposes this under **Participants → Add dummy participants**.
 
 ## Participant sessions (`sesi`)
 
