@@ -13,16 +13,31 @@ function secret() {
     );
   return new TextEncoder().encode(value);
 }
+function tokenLifetime() {
+  const value = process.env.JWT_TTL_SECONDS ?? "0";
+  if (
+    !/^\d+$/.test(value) ||
+    !Number.isSafeInteger(Number(value)) ||
+    Number(value) > 34560000
+  )
+    fail(
+      503,
+      "JWT_TTL_SECONDS must be an integer from 0 to 34560000 (0 disables JWT expiry).",
+    );
+  return Number(value);
+}
 export function cookie(token, expired = false) {
-  return `admin_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${expired ? 0 : 28800}${process.env.COOKIE_SECURE === "true" ? "; Secure" : ""}`;
+  return `admin_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${expired ? 0 : tokenLifetime() || 34560000}${process.env.COOKIE_SECURE === "true" ? "; Secure" : ""}`;
 }
 export async function tokenFor(user) {
-  return new SignJWT({ fingerprint: fingerprint(user.password) })
+  const token = new SignJWT({ fingerprint: fingerprint(user.password) })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(user.id))
-    .setIssuedAt()
-    .setExpirationTime("8h")
-    .sign(secret());
+    .setIssuedAt();
+  const lifetime = tokenLifetime();
+  if (lifetime)
+    token.setExpirationTime(Math.floor(Date.now() / 1000) + lifetime);
+  return token.sign(secret());
 }
 export async function authenticate(request, db) {
   const token = request.headers

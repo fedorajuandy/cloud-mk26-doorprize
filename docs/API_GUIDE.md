@@ -4,7 +4,7 @@ This guide is for teams integrating with the participant/admin backend. All rout
 
 ## Authentication
 
-Sign in with an existing admin account. The response sets an eight-hour `admin_session` cookie. Send that cookie on subsequent requests. Passwords and JWT secrets are never returned. There is no separate bearer-token endpoint.
+Sign in with an existing admin account. The response sets an `admin_session` cookie. New JWTs have no expiry by default (`JWT_TTL_SECONDS=0`); set a positive lifetime in seconds to enable expiry, e.g. `28800` for eight hours. The browser cookie lasts up to 400 days in non-expiring mode; clearing browser cookies still requires signing in again. Existing tokens retain their original expiry—sign in again after deployment. Send that cookie on subsequent requests. Passwords and JWT secrets are never returned. There is no separate bearer-token endpoint.
 
 ```sh
 BASE_URL="http://localhost:6230"
