@@ -7,7 +7,10 @@ export default function ResetParticipantResults(props) {
   const [prize, setPrize] = createSignal("");
   const [babak, setBabak] = createSignal("");
   const [sesi, setSesi] = createSignal("");
-  const needs = (key) => scope() === key || scope() === "specific";
+  const needs = (key) =>
+    scope() === key ||
+    scope() === "specific" ||
+    (scope() === "babak_prize" && ["babak", "prize"].includes(key));
   const [busy, setBusy] = createSignal(false);
   const [error, setError] = createSignal("");
   async function reset(event) {
@@ -47,11 +50,10 @@ export default function ResetParticipantResults(props) {
               setConfirmation("");
             }}
           >
-            <option value="babak">Babak</option>
-            <option value="prize">Prize</option>
-            <option value="sesi">Sesi</option>
-            <option value="specific">Babak + prize + sesi</option>
-            <option value="all">All</option>
+            <option value="all">Semua hasil</option>
+            <option value="babak">Per babak</option>
+            <option value="babak_prize">Per hadiah dalam babak</option>
+            <option value="specific">Per sesi dalam hadiah dan babak</option>
           </select>
         </label>
         <Show when={needs("babak")}>
@@ -111,7 +113,7 @@ export default function ResetParticipantResults(props) {
             ? "every participant"
             : "participants matching the reset scope above"}
           , including invalid winners and archived records. Table filters do not
-          apply. Combined scope requires all three values to match. Participant
+          apply. All fields in the selected scope must match. Participant
           details and archive status are preserved. Active participants become
           eligible for the draw again. Previous results cannot be restored by
           this action. Queued or published source-site awards are not canceled.

@@ -1144,7 +1144,7 @@ test("invalid winners are excluded by default and share list/export filters", as
 });
 
 test("scoped result reset matches exact fields and preserves unrelated participants and links", async () => {
-  for (const scope of ["prize", "babak", "sesi", "specific"]) {
+  for (const scope of ["prize", "babak", "sesi", "babak_prize", "specific"]) {
     await db("doorprize_links").delete();
     await db("participants").delete();
     const fixtures = [
@@ -1173,7 +1173,11 @@ test("scoped result reset matches exact fields and preserves unrelated participa
     const input = {
       scope,
       confirmation: "RESET ALL RESULTS",
-      ...(scope === "specific" ? fixtures[0] : { [scope]: fixtures[0][scope] }),
+      ...(scope === "specific"
+        ? fixtures[0]
+        : scope === "babak_prize"
+          ? { babak: 1, prize: "Laptop" }
+          : { [scope]: fixtures[0][scope] }),
     };
     const before = await db("participants").orderBy("id");
     const response = await request("/participants/reset-results", {
@@ -1187,7 +1191,9 @@ test("scoped result reset matches exact fields and preserves unrelated participa
       const matches =
         scope === "specific"
           ? i === 0
-          : fixtures[i][scope] === fixtures[0][scope];
+          : scope === "babak_prize"
+            ? fixtures[i].babak === 1 && fixtures[i].prize === "Laptop"
+            : fixtures[i][scope] === fixtures[0][scope];
       const link = await db("doorprize_links")
         .where({ participant_id: before[i].id })
         .first();
@@ -1209,6 +1215,8 @@ test("scoped result reset matches exact fields and preserves unrelated participa
     { scope: "prize", prize: "" },
     { scope: "all", babak: 1 },
     { scope: "babak", babak: -1 },
+    { scope: "babak_prize", babak: 1 },
+    { scope: "babak_prize", prize: "Laptop" },
   ]) {
     const response = await request("/participants/reset-results", {
       method: "POST",

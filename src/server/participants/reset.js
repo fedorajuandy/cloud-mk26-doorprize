@@ -14,6 +14,14 @@ export async function resetParticipantResults({ db, user, request, method }) {
       z.object({ scope: z.literal("all"), confirmation }).strict(),
       z.object({ scope: z.literal("prize"), prize, confirmation }).strict(),
       z
+        .object({
+          scope: z.literal("babak_prize"),
+          babak: round,
+          prize,
+          confirmation,
+        })
+        .strict(),
+      z
         .object({ scope: z.literal("babak"), babak: round, confirmation })
         .strict(),
       z

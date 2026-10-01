@@ -165,6 +165,18 @@ test("participant file import, shared filters, Excel export and theme indicator"
   const resetDialog = page.getByRole("dialog", {
     name: "Reset participant results",
   });
+  await expect(
+    resetDialog.getByLabel("Reset scope").locator("option"),
+  ).toHaveText([
+    "Semua hasil",
+    "Per babak",
+    "Per hadiah dalam babak",
+    "Per sesi dalam hadiah dan babak",
+  ]);
+  await resetDialog.getByLabel("Reset scope").selectOption("babak_prize");
+  await expect(resetDialog.getByLabel("Babak", { exact: true })).toBeVisible();
+  await expect(resetDialog.getByLabel("Exact prize")).toBeVisible();
+  await expect(resetDialog.getByLabel("Sesi", { exact: true })).toHaveCount(0);
   await resetDialog.getByLabel("Reset scope").selectOption("specific");
   await expect(resetDialog.getByLabel("Exact prize")).toBeVisible();
   await expect(resetDialog.getByLabel("Babak", { exact: true })).toBeVisible();
