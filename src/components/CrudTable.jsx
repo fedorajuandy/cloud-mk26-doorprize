@@ -270,7 +270,7 @@ export default function CrudTable(props) {
         <div class="page-actions">
           <Show when={props.participants && props.canResetResults}>
             <button class="secondary" onClick={() => setResettingResults(true)}>
-              Reset all results
+              Reset results
             </button>
           </Show>
           <Show when={props.participants && props.canSeed}>

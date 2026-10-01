@@ -62,10 +62,10 @@ This is not a server-side random draw or eligibility lock. Frontend draw selecti
 
 ## Admin controls
 
-- **Save integration settings:** claim defaults, import mode, automatic winner delivery. Disabling delivery pauses queue processing and automatic capture; an in-flight request may still finish.
+- **Save integration settings:** claim defaults, import mode, automatic winner delivery. Disabling automatic delivery pauses automatic capture and automatic batches; an in-flight request may still finish. Explicitly queued manual batches and operator retries continue.
 - **Test connection:** queues a minimal source API read for the worker.
 - **Start participant sync / Pause / Resume:** control the cursor import job; pause takes effect at the next page boundary.
-- **Queue current winners:** captures up to 100 mapped active winners not already captured, useful for prizes assigned while delivery was off or before mapping. Repeat for more than 100.
+- **Queue current winners:** captures up to 100 mapped active winners not already captured, useful for prizes assigned while delivery was off or before mapping. Works while automatic delivery is off; the worker sends these explicitly authorized batches. Repeat for more than 100.
 - **Refresh status:** worker heartbeat, connection state, import totals/skips, delivery batch counts, last 50 deliveries and errors. Status refreshes every five seconds while this panel is open.
 - **Retry original batch:** retry a failed batch after resolving the problem. Pending batches retry automatically when due.
 
@@ -85,3 +85,5 @@ This is not a server-side random draw or eligibility lock. Frontend draw selecti
 | POST   | `/api/integration/doorprize/retry`  | `{id:DELIVERY_ID}`; retry failed batch unchanged                                                                        |
 
 The roulette app still uses the existing cookie authentication and same-origin integration; it must not use the source bearer token. If hosted on a different origin, deploy a same-origin reverse proxy/BFF consistent with the backend's APP_ORIGIN checks. This feature does not enable browser CORS or expose a source integration key.
+
+Manual winner delivery requires migration `011_manual_winner_delivery.js` (`npm run db:migrate`) and restarting both the app and integration worker. Keep the worker running; the button queues work rather than sending synchronously. Existing automatic pending batches remain paused while automatic delivery is off.

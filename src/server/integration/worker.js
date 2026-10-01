@@ -244,13 +244,14 @@ export async function workerStep(db, fetcher = fetch) {
     let type, event;
     if (config.test_requested) type = "test";
     else {
-      event = config.enabled
-        ? await trx("doorprize_outbox")
-            .where({ status: "pending" })
-            .where("next_attempt_at", "<=", now)
-            .orderBy("id")
-            .first()
-        : null;
+      event = await trx("doorprize_outbox")
+        .where({ status: "pending" })
+        .where("next_attempt_at", "<=", now)
+        .modify((query) => {
+          if (!config.enabled) query.where("manual_delivery", true);
+        })
+        .orderBy("id")
+        .first();
       if (event) type = "send";
       else if (config.import_status === "running") type = "import";
       else return null;

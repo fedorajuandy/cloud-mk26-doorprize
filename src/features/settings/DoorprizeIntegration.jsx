@@ -117,8 +117,10 @@ export default function DoorprizeIntegration() {
               </label>
               <p class="muted">
                 When enabled, prize assignments for linked participants are
-                queued automatically. Turning this off pauses deliveries. Use
-                “Queue current winners” for assignments made while disabled.
+                queued automatically. When off, automatic deliveries are paused.
+                Click “Queue current winners” to send up to 100 unqueued winners
+                without enabling automatic delivery. Manually queued deliveries
+                and retries continue while this setting is off.
               </p>
               <label>
                 Participant import mode
@@ -236,9 +238,7 @@ export default function DoorprizeIntegration() {
             </button>
             <button
               class="primary"
-              disabled={
-                busy() || !status().configured || !status().settings.enabled
-              }
+              disabled={busy() || !status().configured}
               onClick={() => run("queue")}
             >
               Queue current winners

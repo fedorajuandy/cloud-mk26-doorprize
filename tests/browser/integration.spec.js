@@ -36,6 +36,16 @@ test("Super Admin can configure integration and review status without exposing a
     page.getByLabel("Participant import mode", { exact: true }),
   ).toHaveValue("create");
   await expect(page.getByText("No deliveries yet.")).toBeVisible();
+  await expect(
+    page.getByLabel("Automatic winner delivery", { exact: true }),
+  ).not.toBeChecked();
+  await expect(
+    page.getByRole("button", { name: "Queue current winners", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Queue current winners", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("0 winner(s) queued");
 });
 
 test("connection test shows pending, worker-offline, success and failure beside controls", async ({

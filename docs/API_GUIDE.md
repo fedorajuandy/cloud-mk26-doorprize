@@ -462,3 +462,17 @@ Excel export uses the same filters and sorting as the table. `scope=all` exports
 Reset all results clears prize/babak/sesi and sets is_invalid to false, making active disqualified participants eligible again. Invalid participants are excluded from newly queued source awards and unmapped-winner counts. Existing queued or published awards are not revoked by invalidation; corrections to those awards must be handled on the source site.
 
 Deploy migration `010_participant_invalid.js` with `npm run db:migrate`. Existing participants become valid by default. Composite indexes cover archive/validity pagination and babak/sesi filtering.
+
+### Scoped winner reset
+
+`POST /api/participants/reset-results` (Super Admin) accepts `confirmation: "RESET ALL RESULTS"` and a `scope`:
+
+- `all` (default): no filter fields; preserves the existing reset-all request.
+- `prize`: requires `prize` (nonblank exact prize name).
+- `babak`: requires `babak` (nonnegative integer).
+- `sesi`: requires `sesi` (nonnegative integer).
+- `specific`: requires `prize`, `babak`, and `sesi`; all must match.
+
+Example: `{"confirmation":"RESET ALL RESULTS","scope":"specific","prize":"Laptop","babak":1,"sesi":2}`.
+
+Matching participants have prize/babak/sesi cleared and `is_invalid=false`, including archived participants. Details and archive status are preserved. Only matching integration links have their last-prize markers cleared. Queued/published source awards remain unchanged. The response contains `data.updated` (changed participants). The admin reset dialog supplies its own scope independently of table filters; missing scoped fields or extra fields return 422.

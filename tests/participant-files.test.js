@@ -1142,3 +1142,80 @@ test("invalid winners are excluded by default and share list/export filters", as
   assert.equal(bad.status, 422);
   assert.equal((await request("/participants?is_invalid=oops")).status, 422);
 });
+
+test("scoped result reset matches exact fields and preserves unrelated participants and links", async () => {
+  for (const scope of ["prize", "babak", "sesi", "specific"]) {
+    await db("doorprize_links").delete();
+    await db("participants").delete();
+    const fixtures = [
+      { prize: "Laptop", babak: 1, sesi: 2 },
+      { prize: "Phone", babak: 1, sesi: 2 },
+      { prize: "Laptop", babak: 3, sesi: 2 },
+      { prize: "Laptop", babak: 1, sesi: 4 },
+    ];
+    for (let i = 0; i < fixtures.length; i++) {
+      const [id] = await db("participants").insert({
+        unique_id: `scope-${i}`,
+        full_name: `Person ${i}`,
+        nip: String(i),
+        unit_kerja: "HQ",
+        is_invalid: true,
+        ...fixtures[i],
+        ...(i === 0 ? { deleted_at: db.fn.now() } : {}),
+      });
+      await db("doorprize_links").insert({
+        participant_id: id,
+        source_id: i + 1,
+        source_nip: String(i),
+        last_prize: fixtures[i].prize,
+      });
+    }
+    const input = {
+      scope,
+      confirmation: "RESET ALL RESULTS",
+      ...(scope === "specific" ? fixtures[0] : { [scope]: fixtures[0][scope] }),
+    };
+    const before = await db("participants").orderBy("id");
+    const response = await request("/participants/reset-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    assert.equal(response.status, 200);
+    const after = await db("participants").orderBy("id");
+    for (let i = 0; i < before.length; i++) {
+      const matches =
+        scope === "specific"
+          ? i === 0
+          : fixtures[i][scope] === fixtures[0][scope];
+      const link = await db("doorprize_links")
+        .where({ participant_id: before[i].id })
+        .first();
+      if (matches) {
+        assert.equal(after[i].prize, null);
+        assert.equal(after[i].babak, null);
+        assert.equal(after[i].sesi, null);
+        assert.equal(Boolean(after[i].is_invalid), false);
+        assert.equal(link.last_prize, null);
+        assert.equal(String(after[i].deleted_at), String(before[i].deleted_at));
+      } else {
+        assert.deepEqual(after[i], before[i]);
+        assert.equal(link.last_prize, before[i].prize);
+      }
+    }
+  }
+  for (const input of [
+    { scope: "specific", prize: "Laptop", babak: 1 },
+    { scope: "prize", prize: "" },
+    { scope: "all", babak: 1 },
+    { scope: "babak", babak: -1 },
+  ]) {
+    const response = await request("/participants/reset-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmation: "RESET ALL RESULTS", ...input }),
+    });
+    assert.equal(response.status, 422);
+  }
+  await db("doorprize_links").delete();
+});

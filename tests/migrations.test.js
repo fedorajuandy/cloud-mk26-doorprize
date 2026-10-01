@@ -35,7 +35,7 @@ test("adopts existing admin tables without replaying unrelated migration history
     });
     const history = await db("knex_migrations");
     const [, applied] = await db.migrate.latest();
-    assert.equal(applied.length, 10);
+    assert.equal(applied.length, 11);
     assert.ok(await db.schema.hasTable("participants"));
     assert.deepEqual(await db("users").first(), before);
     assert.deepEqual(

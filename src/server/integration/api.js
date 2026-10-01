@@ -116,8 +116,6 @@ export async function integrationApi({ db, user, request, method, action }) {
       const config = await trx("doorprize_integration")
         .where({ id: 1 })
         .first();
-      if (!config.enabled)
-        fail(409, "Enable winner delivery before queueing current winners.");
       checkSource(config, credentials().origin);
       const records = await trx("participants as p")
         .join("doorprize_links as l", "l.participant_id", "p.id")
@@ -178,7 +176,12 @@ export async function integrationApi({ db, user, request, method, action }) {
     if (action === "retry") {
       const changed = await trx("doorprize_outbox")
         .where({ id: input.id, status: "failed" })
-        .update({ status: "pending", next_attempt_at: 0, last_error: null });
+        .update({
+          status: "pending",
+          next_attempt_at: 0,
+          last_error: null,
+          manual_delivery: true,
+        });
       if (!changed) fail(409, "Only failed deliveries can be retried here.");
     }
     return json({ accepted: true }, 202);

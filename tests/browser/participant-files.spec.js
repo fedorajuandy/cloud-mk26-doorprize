@@ -160,11 +160,16 @@ test("participant file import, shared filters, Excel export and theme indicator"
     contactRow.getByRole("img", { name: "Participant profile" }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Reset all results", exact: true })
+    .getByRole("button", { name: "Reset results", exact: true })
     .click();
   const resetDialog = page.getByRole("dialog", {
-    name: "Reset all participant results",
+    name: "Reset participant results",
   });
+  await resetDialog.getByLabel("Reset scope").selectOption("specific");
+  await expect(resetDialog.getByLabel("Exact prize")).toBeVisible();
+  await expect(resetDialog.getByLabel("Babak", { exact: true })).toBeVisible();
+  await expect(resetDialog.getByLabel("Sesi", { exact: true })).toBeVisible();
+  await resetDialog.getByLabel("Reset scope").selectOption("all");
   const resetButton = resetDialog.getByRole("button", {
     name: "Reset all participant results",
     exact: true,

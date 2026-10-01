@@ -23,6 +23,7 @@ export async function queueWinnerChanges(trx, records, { force = false } = {}) {
     if (!winners.length) return;
     await trx("doorprize_outbox").insert({
       batch_id: batchId,
+      manual_delivery: force,
       participant_id: localIds[0],
       participant_count: winners.length,
       payload: JSON.stringify({ batchId, winners }),

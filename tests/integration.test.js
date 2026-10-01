@@ -328,8 +328,11 @@ test("manual queue handles winners assigned while paused; reset and purge preser
   await db("doorprize_integration").update({ enabled: false });
   await request(`/participants/${id}`, "PATCH", { prize: "Laptop" });
   assert.equal((await db("doorprize_outbox")).length, 0);
-  await db("doorprize_integration").update({ enabled: true });
   assert.equal((await (await control("queue")).json()).data.queued, 1);
+  assert.equal(
+    Boolean((await db("doorprize_outbox").first()).manual_delivery),
+    true,
+  );
   assert.equal((await (await control("queue")).json()).data.queued, 0);
   await request("/participants/reset-results", "POST", {
     confirmation: "RESET ALL RESULTS",
@@ -452,4 +455,48 @@ test("invalid winners are not queued through updates or manual controls", async 
   });
   assert.equal(restored.status, 200);
   assert.equal((await db("doorprize_outbox")).length, 1);
+});
+
+test("manual delivery sends while automatic delivery is off and future assignments stay local", async () => {
+  const id = await linked();
+  await db("doorprize_integration").update({ enabled: false });
+  await request(`/participants/${id}`, "PATCH", { prize: "Laptop" });
+  let calls = 0;
+  const send = async (url, options) => {
+    calls++;
+    return success(options.body);
+  };
+  await step(send);
+  assert.equal(calls, 0);
+  assert.equal((await (await control("queue")).json()).data.queued, 1);
+  await step(send);
+  assert.equal(calls, 1);
+  assert.equal((await db("doorprize_outbox").first()).status, "sent");
+  assert.equal(
+    Boolean((await db("doorprize_integration").first()).enabled),
+    false,
+  );
+  const second = await participant("002");
+  await db("doorprize_links").insert({
+    participant_id: second,
+    source_id: 124,
+    source_nip: "002",
+  });
+  await request(`/participants/${second}`, "PATCH", { prize: "Phone" });
+  await step(send);
+  assert.equal(calls, 1);
+  assert.equal((await db("doorprize_outbox")).length, 1);
+  // Old automatic batches remain paused; an explicit retry authorizes this batch only.
+  const original = await db("doorprize_outbox").first();
+  await db("doorprize_outbox")
+    .where({ id: original.id })
+    .update({ status: "pending", manual_delivery: false });
+  await step(send);
+  assert.equal(calls, 1);
+  await db("doorprize_outbox")
+    .where({ id: original.id })
+    .update({ status: "failed" });
+  await control("retry", { id: original.id });
+  await step(send);
+  assert.equal(calls, 2);
 });
