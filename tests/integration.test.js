@@ -227,7 +227,9 @@ test("single and batch winner writes queue atomically, send correct identity, an
   assert.equal(payload.winners[0].participantId, 123);
   assert.equal(payload.winners[0].nip, "001");
   assert.equal(payload.winners[0].prizeName, "Laptop");
-  assert.match(payload.winners[0].description, /Sesi 1 · Babak 2/);
+  assert.equal(payload.winners[0].description, "");
+  assert.equal(Object.hasOwn(payload.winners[0], "sesi"), false);
+  assert.equal(Object.hasOwn(payload.winners[0], "babak"), false);
   response = await request("/participants/batch", "PATCH", {
     updates: [{ id, prize: "Laptop", babak: 3 }],
   });

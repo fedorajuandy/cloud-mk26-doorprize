@@ -51,7 +51,7 @@ The worker normally starts delivery within a few seconds. Database leases serial
 
 - `participantId` and `nip` come from the saved source mapping, not from guessed frontend values.
 - `prizeName` is the local prize (maximum 160 characters for linked publication).
-- Source does not accept structured `sesi`/`babak` fields. They remain local and are appended to the award description; the configured message is shortened if needed to stay within 300 characters.
+- `sesi` and `babak` remain internal: neither is sent as a field or appended to the award description. Newly queued awards use only the configured description. Existing immutable queued/published snapshots are unchanged.
 - Claim location is mandatory (default **Meja Doorprize**). Message, local source prize-image path, and deadline are configurable. Defaults are copied at queue time; later settings changes do not mutate queued payloads.
 - `imageUrl` is a source-local `/prize-assets/name.webp|png|jpg|jpeg`, not this CMS's profile image and not an external URL.
 - Every award gets a random external ID; every batch gets a random batch ID. Retries send the exact stored payload/IDs, including after process restarts or ambiguous network failures. The source acknowledges matching batch ID/count before delivery becomes `sent`.

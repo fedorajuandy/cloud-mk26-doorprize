@@ -57,21 +57,12 @@ export async function queueWinnerChanges(trx, records, { force = false } = {}) {
       );
     if (row.prize.length > 160)
       fail(422, "Synced prize names must be at most 160 characters.");
-    const context = [
-      row.sesi === null ? null : `Sesi ${row.sesi}`,
-      row.babak === null ? null : `Babak ${row.babak}`,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    const description = context
-      ? `${config.description.slice(0, 297 - context.length)}${config.description ? " · " : ""}${context}`
-      : config.description;
     const winner = {
       externalId: `cms-${randomUUID()}`,
       participantId: Number(link.source_id),
       nip: link.source_nip,
       prizeName: row.prize,
-      description,
+      description: config.description,
       imageUrl: config.image_url,
       claimLocation: config.claim_location,
       claimDeadline: config.claim_deadline,
