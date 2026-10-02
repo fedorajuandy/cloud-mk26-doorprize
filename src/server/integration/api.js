@@ -18,39 +18,50 @@ export async function integrationApi({ db, user, request, method, action }) {
     } catch {
       /* Status only; never return credentials. */
     }
-    const [counts, links, history, unmapped, issues] = await Promise.all([
-      db("doorprize_outbox")
-        .select("status")
-        .count({ count: "*" })
-        .groupBy("status"),
-      db("doorprize_links").count({ count: "*" }).first(),
-      db("doorprize_outbox")
-        .select(
-          "id",
-          "batch_id",
-          "participant_id",
-          "participant_count",
-          "status",
-          "attempts",
-          "last_error",
-          "created_at",
-          "sent_at",
-        )
-        .orderBy("id", "desc")
-        .limit(50),
-      db("participants as p")
-        .leftJoin("doorprize_links as l", "l.participant_id", "p.id")
-        .whereNull("p.deleted_at")
-        .whereNotNull("p.prize")
-        .where("p.is_invalid", false)
-        .whereNull("l.participant_id")
-        .count({ count: "*" })
-        .first(),
-      db("doorprize_import_issues").orderBy("id", "desc").limit(50),
-    ]);
+    const [counts, links, history, unmapped, issues, participants] =
+      await Promise.all([
+        db("doorprize_outbox")
+          .select("status")
+          .count({ count: "*" })
+          .groupBy("status"),
+        db("doorprize_links").count({ count: "*" }).first(),
+        db("doorprize_outbox")
+          .select(
+            "id",
+            "batch_id",
+            "participant_id",
+            "participant_count",
+            "status",
+            "attempts",
+            "last_error",
+            "created_at",
+            "sent_at",
+          )
+          .orderBy("id", "desc")
+          .limit(50),
+        db("participants as p")
+          .leftJoin("doorprize_links as l", "l.participant_id", "p.id")
+          .whereNull("p.deleted_at")
+          .whereNotNull("p.prize")
+          .where("p.is_invalid", false)
+          .whereNull("l.participant_id")
+          .count({ count: "*" })
+          .first(),
+        db("doorprize_import_issues").orderBy("id", "desc").limit(50),
+        db("participants")
+          .whereNull("deleted_at")
+          .where("is_invalid", false)
+          .select(db.raw("COUNT(*) AS total, COUNT(prize) AS with_prize"))
+          .first(),
+      ]);
     return json({
       configured,
       origin,
+      participants: {
+        with_prize: Number(participants.with_prize),
+        without_prize:
+          Number(participants.total) - Number(participants.with_prize),
+      },
       settings: {
         enabled: Boolean(config.enabled),
         import_mode: config.import_mode,

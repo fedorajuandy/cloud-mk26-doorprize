@@ -87,17 +87,7 @@ export default function DoorprizeIntegration() {
         fallback={<p class="muted">Loading integration…</p>}
       >
         <div class="card settings-card integration-card">
-          <p>
-            Source: {status().origin || "Not configured"} · Connection:{" "}
-            {status().connection}
-          </p>
-          <Show when={!status().configured}>
-            <p class="error">
-              Configure DOORPRIZE_SOURCE_URL and DOORPRIZE_SOURCE_TOKEN on the
-              backend server. The source site's Super Admin creates the token
-              under Doorprize → Kunci integrasi.
-            </p>
-          </Show>
+          <h2>Sync settings</h2>
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -197,6 +187,23 @@ export default function DoorprizeIntegration() {
               </button>
             </fieldset>
           </form>
+        </div>
+        <div
+          class="card settings-card integration-card"
+          aria-label="Sync controller"
+        >
+          <h2>Sync controller</h2>
+          <p>
+            Source: {status().origin || "Not configured"} · Connection:{" "}
+            {status().connection}
+          </p>
+          <Show when={!status().configured}>
+            <p class="error">
+              Configure DOORPRIZE_SOURCE_URL and DOORPRIZE_SOURCE_TOKEN on the
+              backend server. The source site's Super Admin creates the token
+              under Doorprize → Kunci integrasi.
+            </p>
+          </Show>
           <div class="page-actions">
             <button
               class="secondary"
@@ -298,6 +305,18 @@ export default function DoorprizeIntegration() {
                 as the web app.
               </p>
             </Show>
+          </div>
+          <div aria-label="Participant prize counts">
+            <p>
+              Without prizes:{" "}
+              <strong>{status().participants?.without_prize ?? 0}</strong> ·
+              With prizes:{" "}
+              <strong>{status().participants?.with_prize ?? 0}</strong>
+            </p>
+            <p class="muted">
+              Active, valid participants only; archived and invalid participants
+              are excluded.
+            </p>
           </div>
           <p>
             Participant sync: <strong>{status().import.status}</strong> ·

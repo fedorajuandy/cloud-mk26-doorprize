@@ -13,6 +13,26 @@ test("Super Admin can configure integration and review status without exposing a
     page.getByRole("heading", { name: "Doorprize integration", exact: true }),
   ).toBeVisible();
   await expect(page.getByText(/Delivery worker is offline/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Sync settings", exact: true }),
+  ).toBeVisible();
+  const controller = page.getByLabel("Sync controller", { exact: true });
+  await expect(
+    controller.getByRole("button", { name: "Test connection", exact: true }),
+  ).toBeVisible();
+  await expect(controller.getByText(/Connection:/).first()).toBeVisible();
+  await expect(controller.getByLabel("Participant prize counts")).toContainText(
+    "Without prizes:",
+  );
+  await expect(controller.getByLabel("Participant prize counts")).toContainText(
+    "With prizes:",
+  );
+  await expect(
+    controller.getByRole("button", {
+      name: "Save integration settings",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   await page
     .getByLabel("Claim location", { exact: true })
     .fill("Meja Pengambilan");

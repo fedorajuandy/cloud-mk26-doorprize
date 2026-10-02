@@ -719,6 +719,9 @@ th[aria-sort="descending"] {
 .integration-card {
   max-width: 1000px;
 }
+.integration-card + .integration-card {
+  margin-top: 24px;
+}
 .integration-card fieldset {
   display: grid;
   gap: 16px;

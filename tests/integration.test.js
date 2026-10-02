@@ -500,3 +500,14 @@ test("manual delivery sends while automatic delivery is off and future assignmen
   await step(send);
   assert.equal(calls, 2);
 });
+
+test("integration participant counts separate valid active records by prize", async () => {
+  let data = (await (await request("/integration/doorprize")).json()).data;
+  assert.deepEqual(data.participants, { with_prize: 0, without_prize: 0 });
+  await participant("count-1");
+  await participant("count-2", { prize: "Laptop" });
+  await participant("count-3", { prize: "Phone", is_invalid: true });
+  await participant("count-4", { deleted_at: db.fn.now() });
+  data = (await (await request("/integration/doorprize")).json()).data;
+  assert.deepEqual(data.participants, { with_prize: 1, without_prize: 1 });
+});
