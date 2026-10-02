@@ -15,7 +15,7 @@ test("Super Admin can configure integration and review status without exposing a
   await expect(page.getByText(/Delivery worker is offline/)).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Sync settings", exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   const controller = page.getByLabel("Sync controller", { exact: true });
   await expect(
     controller.getByRole("button", { name: "Test connection", exact: true }),
@@ -34,6 +34,12 @@ test("Super Admin can configure integration and review status without exposing a
     }),
   ).toHaveCount(0);
   await page
+    .getByRole("button", { name: "Sync settings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Test connection", exact: true }),
+  ).toHaveCount(0);
+  await page
     .getByLabel("Claim location", { exact: true })
     .fill("Meja Pengambilan");
   await page
@@ -49,16 +55,23 @@ test("Super Admin can configure integration and review status without exposing a
   await page
     .getByRole("link", { name: "Doorprize integration", exact: true })
     .click();
+  await page
+    .getByRole("button", { name: "Sync settings", exact: true })
+    .click();
   await expect(page.getByLabel("Claim location", { exact: true })).toHaveValue(
     "Meja Pengambilan",
   );
   await expect(
     page.getByLabel("Participant import mode", { exact: true }),
   ).toHaveValue("create");
-  await expect(page.getByText("No deliveries yet.")).toBeVisible();
+
   await expect(
     page.getByLabel("Automatic winner delivery", { exact: true }),
   ).not.toBeChecked();
+  await page
+    .getByRole("button", { name: "Sync controller", exact: true })
+    .click();
+  await expect(page.getByText("No deliveries yet.")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Queue current winners", exact: true }),
   ).toBeEnabled();
