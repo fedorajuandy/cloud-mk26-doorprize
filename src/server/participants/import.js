@@ -5,8 +5,8 @@ import { HttpError, fail } from "../errors.js";
 import { json, readBytes } from "../http.js";
 import { participant } from "../validation.js";
 import { validateWorkbookArchive } from "./archive.js";
-const MAX_FILE = 5 * 1024 * 1024;
-const MAX_ROWS = 5000;
+const MAX_FILE = 20 * 1024 * 1024;
+const MAX_ROWS = 50000;
 const fields = [
   "is_invalid",
   "unique_id",
@@ -215,7 +215,7 @@ export async function importParticipants({ db, user, request, method }) {
       415,
       "Supported formats are .xlsx and .csv. Save older .xls files as .xlsx first.",
     );
-  if (file.size > MAX_FILE) fail(413, "File exceeds the 5 MB upload limit.");
+  if (file.size > MAX_FILE) fail(413, "File exceeds the 20 MB upload limit.");
   if (!file.size) fail(422, "The file is empty.");
   const { keys, rows } = await parseUpload(file);
   if (rows.length > MAX_ROWS)

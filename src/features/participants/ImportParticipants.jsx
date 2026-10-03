@@ -86,8 +86,8 @@ export default function ImportParticipants(props) {
           />
         </label>
         <p class="muted">
-          Up to 5 MB and 5,000 rows. Store unique IDs, NIP and phone numbers as
-          text to preserve leading zeros. Import adds new records; reusing a
+          Up to 20 MB and 50,000 rows. Store unique IDs, NIP and phone numbers
+          as text to preserve leading zeros. Import adds new records; reusing a
           unique ID rejects the whole import.
         </p>
         <Show when={error()}>

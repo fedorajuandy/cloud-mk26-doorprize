@@ -196,7 +196,7 @@ curl --fail-with-body -b "$COOKIE_JAR" -X PATCH \
 
 `POST /api/participants/import`
 
-Send exactly one file in the multipart field `file`. Supported formats are `.xlsx` and comma-separated UTF-8 `.csv` (UTF-8 BOM accepted). Older `.xls` files must first be saved as `.xlsx`. Limits: 5 MiB file size, 5,000 data rows, 32 columns, and 25 MiB expanded XLSX archive. The total multipart request must fit within 5 MiB plus 64 KiB. XLSX imports read the **first worksheet**, with headers in row 1. Fully blank data rows are skipped.
+Send exactly one file in the multipart field `file`. Supported formats are `.xlsx` and comma-separated UTF-8 `.csv` (UTF-8 BOM accepted). Older `.xls` files must first be saved as `.xlsx`. Limits: 20 MiB file size, 50,000 data rows, 32 columns, and 100 MiB expanded XLSX archive. The total multipart request must fit within 20 MiB plus 64 KiB. XLSX imports read the **first worksheet**, with headers in row 1. Fully blank data rows are skipped.
 
 Download the empty Excel template:
 

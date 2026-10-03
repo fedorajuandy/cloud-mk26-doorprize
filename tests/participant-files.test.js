@@ -83,7 +83,7 @@ function upload(content, filename = "participants.csv", auth = cookie) {
   if (
     filename.endsWith(".csv") &&
     typeof content === "string" &&
-    content.length <= 5 * 1024 * 1024
+    content.length <= 20 * 1024 * 1024
   ) {
     try {
       const records = parseCsv(content, { bom: true });
@@ -328,10 +328,10 @@ test("Excel formulas and lossy numeric identifiers are rejected without partial 
 });
 test("upload limits, file formats, method checks and role permissions are enforced", async () => {
   assert.equal((await upload("x", "file.xls")).status, 415);
-  assert.equal((await upload("x".repeat(5 * 1024 * 1024 + 1))).status, 413);
+  assert.equal((await upload("x".repeat(20 * 1024 * 1024 + 1))).status, 413);
   const large =
     "full_name,nip,unit_kerja\n" +
-    Array.from({ length: 5001 }, (_, i) => `Name,${i},Finance`).join("\n");
+    Array.from({ length: 50001 }, (_, i) => `Name,${i},Finance`).join("\n");
   assert.equal((await upload(large)).status, 422);
   assert.equal(
     (
@@ -1227,4 +1227,21 @@ test("scoped result reset matches exact fields and preserves unrelated participa
     assert.equal(response.status, 422);
   }
   await db("doorprize_links").delete();
+});
+
+test("CSV import accepts 50000 participants in one atomic batch", async () => {
+  const csv =
+    "unique_id,full_name,nip,unit_kerja\n" +
+    Array.from(
+      { length: 50000 },
+      (_, i) =>
+        `large-${i},Participant ${i},${String(i).padStart(5, "0")},Finance`,
+    ).join("\n");
+  const response = await rawUpload(csv);
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).data.imported, 50000);
+  assert.equal(
+    Number((await db("participants").count({ count: "*" }).first()).count),
+    50000,
+  );
 });

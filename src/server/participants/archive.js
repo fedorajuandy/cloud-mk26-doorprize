@@ -1,6 +1,6 @@
 import yauzl from "yauzl";
 import { fail } from "../errors.js";
-const MAX_EXPANDED = 25 * 1024 * 1024;
+const MAX_EXPANDED = 100 * 1024 * 1024;
 // Count actual decompressed bytes before handing an uploaded archive to the workbook parser.
 export async function validateWorkbookArchive(buffer) {
   const zip = await new Promise((resolve, reject) =>
@@ -36,7 +36,7 @@ export async function validateWorkbookArchive(buffer) {
         try {
           fail(
             413,
-            "Excel file is too large when expanded (maximum 25 MB / 1,000 archive entries).",
+            "Excel file is too large when expanded (maximum 100 MB / 1,000 archive entries).",
           );
         } catch (error) {
           abort(error);
@@ -53,7 +53,7 @@ export async function validateWorkbookArchive(buffer) {
             try {
               fail(
                 413,
-                "Excel file is too large when expanded (maximum 25 MB).",
+                "Excel file is too large when expanded (maximum 100 MB).",
               );
             } catch (error) {
               abort(error);
