@@ -194,6 +194,17 @@ export default function CrudTable(props) {
       setExporting(false);
     }
   }
+  async function exportWinners() {
+    setExporting(true);
+    setError("");
+    try {
+      await download("/participants/export-winners", "winners-by-prize.xlsx");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setExporting(false);
+    }
+  }
   function imported(count) {
     setImporting(false);
     setNotice(
@@ -464,7 +475,10 @@ export default function CrudTable(props) {
         </Show>
         <Show when={props.participants}>
           <div class="export-toolbar">
-            <span class="muted">Excel exports use the selected filters.</span>
+            <span class="muted">
+              Export Excel uses table filters. Export winners includes all
+              active, valid winners, grouped by prize.
+            </span>
             <div class="toolbar-actions">
               <select
                 aria-label="Export scope"
@@ -484,6 +498,13 @@ export default function CrudTable(props) {
                 onClick={exportFile}
               >
                 {exporting() ? "Exporting…" : "Export Excel"}
+              </button>
+              <button
+                class="secondary"
+                disabled={exporting()}
+                onClick={exportWinners}
+              >
+                Export winners
               </button>
             </div>
           </div>

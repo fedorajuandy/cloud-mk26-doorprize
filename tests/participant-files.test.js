@@ -1245,3 +1245,74 @@ test("CSV import accepts 50000 participants in one atomic batch", async () => {
     50000,
   );
 });
+
+test("dedicated winner export groups prizes into safe sheets with only five columns", async () => {
+  const prizes = ["A/B", "A:B", "a/b", "Long prize name ".repeat(4)];
+  for (const [i, prize] of prizes.entries())
+    await db("participants").insert({
+      unique_id: `winner-${i}`,
+      full_name: "Winner",
+      nip: "00001",
+      unit_kerja: "HQ",
+      no_hp: "08123",
+      prize,
+    });
+  await db("participants").insert([
+    {
+      unique_id: "excluded-invalid",
+      full_name: "Invalid",
+      nip: "2",
+      unit_kerja: "HQ",
+      prize: "Excluded",
+      is_invalid: true,
+    },
+    {
+      unique_id: "excluded-archived",
+      is_invalid: false,
+      full_name: "Archived",
+      nip: "3",
+      unit_kerja: "HQ",
+      prize: "Excluded",
+      deleted_at: db.fn.now(),
+    },
+    {
+      unique_id: "excluded-empty",
+      is_invalid: false,
+      full_name: "No prize",
+      nip: "4",
+      unit_kerja: "HQ",
+    },
+  ]);
+  const response = await request(
+    "/participants/export-winners?prize=Ignored&page=99",
+  );
+  assert.equal(response.status, 200);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Buffer.from(await response.arrayBuffer()));
+  assert.equal(workbook.worksheets.length, 4);
+  assert.equal(
+    new Set(workbook.worksheets.map((s) => s.name.toLowerCase())).size,
+    4,
+  );
+  for (const sheet of workbook.worksheets) {
+    assert.ok(sheet.name.length <= 31);
+    assert.deepEqual(sheet.getRow(1).values.slice(1), [
+      "full_name",
+      "nip",
+      "unit_kerja",
+      "no_hp",
+      "prize",
+    ]);
+    assert.equal(sheet.rowCount, 2);
+    assert.equal(sheet.getCell("B2").value, "00001");
+    assert.equal(sheet.getCell("D2").value, "08123");
+  }
+  assert.equal(
+    (await request("/participants/export-winners", {}, "")).status,
+    401,
+  );
+  assert.equal(
+    (await request("/participants/export-winners", { method: "POST" })).status,
+    405,
+  );
+});

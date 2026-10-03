@@ -480,3 +480,7 @@ Matching participants have prize/babak/sesi cleared and `is_invalid=false`, incl
 Admin reset options, in order: **Semua hasil** (`all`), **Per babak** (`babak`), **Per hadiah dalam babak** (`babak_prize`), **Per sesi dalam hadiah dan babak** (`specific`). The older standalone `prize` and `sesi` API scopes remain supported for compatibility but are no longer shown in admin.
 
 For a prize within a round, POST `/api/participants/reset-results` with `{"confirmation":"RESET ALL RESULTS","scope":"babak_prize","babak":1,"prize":"Hadiah B"}`. Both fields are required; matching participants across all sesi are reset. Other prizes and other babak remain unchanged.
+
+### Winners by prize workbook
+
+`GET /api/participants/export-winners` requires `view_participants`. Downloads `winners-by-prize.xlsx` with one worksheet per prize and exactly `full_name`, `nip`, `unit_kerja`, `no_hp`, `prize` columns. Includes all active, valid participants with a non-null prize, independently of table filters and pagination (maximum 50,000 winners). Rows sort by prize/name/ID. Worksheet names are sanitized, shortened and disambiguated; the prize column retains the full original name. An empty result returns a header-only Winners worksheet. The admin **Export winners** button uses this endpoint.
