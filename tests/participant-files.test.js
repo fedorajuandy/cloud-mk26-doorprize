@@ -1316,3 +1316,28 @@ test("dedicated winner export groups prizes into safe sheets with only five colu
     405,
   );
 });
+
+test("PDF winner export requires view permission and returns a downloadable PDF", async () => {
+  assert.equal(
+    (await request("/participants/export-winners-pdf", {}, "")).status,
+    401,
+  );
+  assert.equal(
+    (await request("/participants/export-winners-pdf", { method: "POST" }))
+      .status,
+    405,
+  );
+  const response = await request("/participants/export-winners-pdf");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "application/pdf");
+  assert.match(
+    response.headers.get("content-disposition"),
+    /winners-by-prize.pdf/,
+  );
+  assert.equal(
+    Buffer.from(await response.arrayBuffer())
+      .subarray(0, 5)
+      .toString(),
+    "%PDF-",
+  );
+});

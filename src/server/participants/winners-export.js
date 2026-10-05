@@ -7,17 +7,7 @@ const columns = ["full_name", "nip", "unit_kerja", "no_hp", "prize"];
 export async function exportWinners({ db, user, method }) {
   authorize(user, "view_participants");
   if (method !== "GET") fail(405, "Method not allowed.");
-  const records = await db("participants")
-    .whereNull("deleted_at")
-    .where("is_invalid", false)
-    .whereNotNull("prize")
-    .select(columns)
-    .orderBy("prize")
-    .orderBy("full_name")
-    .orderBy("id")
-    .limit(50001);
-  if (records.length > 50000)
-    fail(422, "Winner export supports up to 50,000 winners.");
+  const records = await winnerRecords(db);
   const workbook = new ExcelJS.Workbook();
   const groups = new Map();
   const names = new Set(["history"]);
@@ -62,4 +52,19 @@ export async function exportWinners({ db, user, method }) {
     await workbook.xlsx.writeBuffer(),
     "winners-by-prize.xlsx",
   );
+}
+
+export async function winnerRecords(db) {
+  const records = await db("participants")
+    .whereNull("deleted_at")
+    .where("is_invalid", false)
+    .whereNotNull("prize")
+    .select(columns)
+    .orderBy("prize")
+    .orderBy("full_name")
+    .orderBy("id")
+    .limit(50001);
+  if (records.length > 50000)
+    fail(422, "Winner export supports up to 50,000 winners.");
+  return records;
 }

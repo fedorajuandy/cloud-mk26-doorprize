@@ -194,11 +194,14 @@ export default function CrudTable(props) {
       setExporting(false);
     }
   }
-  async function exportWinners() {
+  async function exportWinners(format = "xlsx") {
     setExporting(true);
     setError("");
     try {
-      await download("/participants/export-winners", "winners-by-prize.xlsx");
+      await download(
+        `/participants/export-winners${format === "pdf" ? "-pdf" : ""}`,
+        `winners-by-prize.${format}`,
+      );
     } catch (error) {
       setError(error.message);
     } finally {
@@ -502,9 +505,16 @@ export default function CrudTable(props) {
               <button
                 class="secondary"
                 disabled={exporting()}
-                onClick={exportWinners}
+                onClick={() => exportWinners()}
               >
                 Export winners
+              </button>
+              <button
+                class="secondary"
+                disabled={exporting()}
+                onClick={() => exportWinners("pdf")}
+              >
+                Export winners PDF
               </button>
             </div>
           </div>

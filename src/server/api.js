@@ -87,6 +87,11 @@ export async function handleApi(request, db) {
         const { importParticipants } = await import("./participants/import.js");
         return await importParticipants(context);
       }
+      if (rawId === "export-winners-pdf") {
+        const { exportWinnersPdf } =
+          await import("./participants/winners-pdf.js");
+        return await exportWinnersPdf(context);
+      }
       if (rawId === "export-winners") {
         const { exportWinners } =
           await import("./participants/winners-export.js");

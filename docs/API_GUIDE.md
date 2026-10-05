@@ -484,3 +484,7 @@ For a prize within a round, POST `/api/participants/reset-results` with `{"confi
 ### Winners by prize workbook
 
 `GET /api/participants/export-winners` requires `view_participants`. Downloads `winners-by-prize.xlsx` with one worksheet per prize and exactly `full_name`, `nip`, `unit_kerja`, `no_hp`, `prize` columns. Includes all active, valid participants with a non-null prize, independently of table filters and pagination (maximum 50,000 winners). Rows sort by prize/name/ID. Worksheet names are sanitized, shortened and disambiguated; the prize column retains the full original name. An empty result returns a header-only Winners worksheet. The admin **Export winners** button uses this endpoint.
+
+### PDF winner list
+
+`GET /api/participants/export-winners-pdf` uses the same permissions, winner eligibility and 50,000-row limit as the dedicated Excel winner export. The admin **Export winners PDF** button downloads an A4 winner list with Mandiri blue/yellow styling, sections per prize, repeated table headings and page numbers. It contains only `full_name`, `nip`, `unit_kerja`, `no_hp`, and `prize`; table filters do not apply. Exceptionally long cells are shortened visually to keep rows readable; use Excel for unabridged cell values.

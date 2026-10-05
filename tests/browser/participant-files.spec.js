@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import ExcelJS from "exceljs";
+import { readFile } from "node:fs/promises";
 async function downloadedSheet(download) {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(await download.path());
@@ -17,6 +18,15 @@ test("participant file import, shared filters, Excel export and theme indicator"
   await expect(
     page.getByRole("heading", { name: "Participants", exact: true }),
   ).toBeVisible();
+  const pdfDownload = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Export winners PDF", exact: true })
+    .click();
+  const pdf = await pdfDownload;
+  expect(pdf.suggestedFilename()).toBe("winners-by-prize.pdf");
+  expect((await readFile(await pdf.path())).subarray(0, 5).toString()).toBe(
+    "%PDF-",
+  );
   const theme = page.getByRole("switch", { name: "Dark mode" });
   await expect(theme).toHaveAttribute("aria-checked", "false");
   await expect(theme).toContainText("Light mode");

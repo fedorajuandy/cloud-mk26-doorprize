@@ -8,12 +8,14 @@ export default defineConfig({
   environments: {
     nitro: {
       build: {
-        rolldownOptions: { external: ["knex", "mysql2", "better-sqlite3"] },
+        rolldownOptions: {
+          external: ["knex", "mysql2", "better-sqlite3", "pdfkit"],
+        },
       },
     },
   },
   nitro: {
     preset: "node-server",
-    traceDeps: ["knex", "mysql2", "better-sqlite3"],
+    traceDeps: ["knex", "mysql2", "better-sqlite3", "pdfkit"],
   },
 });
